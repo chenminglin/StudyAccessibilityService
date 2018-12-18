@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accessibilityEventTypes="typeWindowStateChanged"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:accessibilityFlags="flagReportViewIds"
+    android:canRetrieveWindowContent="true"
+    android:description="@string/accessibility_description"
+    android:notificationTimeout="1000" />
+
+<!--
+x<code>accessibilityEventTypes </code>： 用来设置响应事件的类型，比如typeAllMask就是响应全部事件，typeNotificationStateChanged就是响应通知状态的改变，如果需要响应多种事件类型可以以 ‘ | ’ 隔开。
+<code>accessibilityFeedbackType </code>： 给用户的反馈方式，比如语音、震动等，这里用处不大。
+<code>canRetrieveWindowContent</code> ：是否可以获取活动窗体的内容，这个设置为true才可以取得窗体中的控件和事件源
+<code>description</code> ：辅助功能的描述
+<code>notificationTimeout</code> ：两个相同类型事件发送到服务的事件间隔，单位毫秒
+<code>packageNames</code> ：指定响应某个应用的事件，取值为应用的包名，多个以‘ , ’ 隔开。没有此属性则表示响应全部应用。这里我填写的是手机qq和系统安装器的包名
+
+作者：_SOLID
+链接：https://www.jianshu.com/p/65afab3d1e2a
+來源：简书
+简书著作权归作者所有，任何形式的转载都请联系作者获得授权并注明出处。
+-->

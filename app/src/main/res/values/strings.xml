@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">无障碍结束进程</string>
+
+    <string name="accessibility_description">这里是一个无障碍的description，产品可根据需要进行描述。</string>
+</resources>
