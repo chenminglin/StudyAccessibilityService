@@ -7,6 +7,7 @@ public class ProcessInfo {
     public String appName;
     public String packageName;
     public Drawable appIcon;
+    public boolean isChecked;
 
 
     @Override
