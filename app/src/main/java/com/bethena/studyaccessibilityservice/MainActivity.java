@@ -2,11 +2,11 @@ package com.bethena.studyaccessibilityservice;
 
 import android.app.ActivityManager;
 import android.content.Context;
-import android.content.pm.ActivityInfo;
+import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.os.AsyncTask;
+import android.provider.Settings;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -14,20 +14,30 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 
 import com.bethena.studyaccessibilityservice.bean.ProcessInfo;
+import com.bethena.studyaccessibilityservice.bean.UserTrajectory;
+import com.bethena.studyaccessibilityservice.service.CleanProcessService;
+import com.bethena.studyaccessibilityservice.utils.AppUtil;
 import com.chad.library.adapter.base.BaseQuickAdapter;
 import com.yqritc.recyclerviewflexibledivider.HorizontalDividerItemDecoration;
 
-import java.lang.reflect.Field;
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class MainActivity extends AppCompatActivity implements SwipeRefreshLayout.OnRefreshListener{
+import static com.bethena.studyaccessibilityservice.Constants.KEY_PARAM1;
+
+public class MainActivity extends AppCompatActivity implements SwipeRefreshLayout.OnRefreshListener {
 
     final String TAG = getClass().getSimpleName();
 
@@ -40,6 +50,8 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
 
     List<ProcessInfo> mDatas = new ArrayList<>();
 
+    ArrayList<String> mAppPkgs = new ArrayList<>();
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,6 +60,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
         toolbar.setTitle(R.string.app_name);
 
         mRefreshLayout = findViewById(R.id.refresh_layout);
@@ -61,7 +74,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         mAdapter.setOnItemChildClickListener(new BaseQuickAdapter.OnItemChildClickListener() {
             @Override
             public void onItemChildClick(BaseQuickAdapter adapter, View view, int position) {
-                switch (view.getId()){
+                switch (view.getId()) {
                     case R.id.item_root:
                         mDatas.get(position).isChecked = !mDatas.get(position).isChecked;
                         mAdapter.notifyItemChanged(position);
@@ -76,53 +89,44 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
             @Override
             public void onClick(View v) {
 
+                boolean isOpen = AppUtil.isAccessibilitySettingsOn(getApplicationContext(), CleanProcessService.class);
+
+                if (!isOpen) {
+                    Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(intent);
+                } else {
+
+                    mAppPkgs.clear();
+
+                    for (ProcessInfo info : mDatas) {
+                        if (info.isChecked) {
+                            mAppPkgs.add(info.packageName);
+                        }
+
+                    }
+
+                    Intent intentService = new Intent(MainActivity.this, CleanProcessService.class);
+                    intentService.putStringArrayListExtra(KEY_PARAM1, mAppPkgs);
+                    startService(intentService);
+
+
+                }
             }
         });
 
-        initData();
 
-//        pm.getApplicationLabel()
-
-//        ActivityManager mActivityManager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
-//        mActivityManager.getRunningTasks();
-//        List<ActivityManager.RunningAppProcessInfo> runningAppProcessInfos = mActivityManager.getRunningAppProcesses();
-//
-//        for(ActivityManager.RunningAppProcessInfo runningAppProcessInfo:runningAppProcessInfos){
-//            Log.d(TAG, "runningAppProcessInfo = " + runningAppProcessInfo.processName);
-//        }
-//
-//        List<ActivityManager.RunningServiceInfo> runningServiceInfos =  mActivityManager.getRunningServices(Integer.MAX_VALUE);
-//        for(ActivityManager.RunningServiceInfo runningServiceInfo:runningServiceInfos){
-//            Log.d(TAG, "runningServiceInfo = " + runningServiceInfo.process);
-//        }
-
-//        final int PROCESS_STATE_TOP = 2;
-//        ActivityManager.RunningAppProcessInfo currentInfo = null;
-//        Field field = null;
-//        try {
-//            field = ActivityManager.RunningAppProcessInfo.class.getDeclaredField("processState");
-//        } catch (Exception ignored) {
-//        }
-//        ActivityManager am = (ActivityManager) getApplication().getSystemService(Context.ACTIVITY_SERVICE);
-//        List<ActivityManager.RunningAppProcessInfo> appList = am.getRunningAppProcesses();
-//        for (ActivityManager.RunningAppProcessInfo app : appList) {
-//            if (app.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND
-//                    && app.importanceReasonCode == ActivityManager.RunningAppProcessInfo.REASON_UNKNOWN) {
-//                Integer state = null;
-//                try {
-//                    state = field.getInt(app);
-//                } catch (Exception e) {
-//                }
-//                if (state != null && state == PROCESS_STATE_TOP) {
-//                    currentInfo = app;
-//                    break;
-//                }
-//            }
-//        }
-
+        EventBus.getDefault().register(this);
     }
 
-    private void initData(){
+    ArrayList<UserTrajectory> trajectories = new ArrayList<>();
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onEvent(UserTrajectory trajectory){
+        trajectories.add(trajectory);
+    }
+
+    private void initData() {
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -130,6 +134,8 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
                 PackageManager pm = getPackageManager();
 //        List<PackageInfo> packageInfos = pm.getInstalledPackages(PackageManager.GET_ACTIVITIES & PackageManager.GET_META_DATA & 0x00200000);
                 List<PackageInfo> packageInfos = pm.getInstalledPackages(0);
+                String desktopPackage = AppUtil.getLauncherPackageName(MainActivity.this);
+                String myPackageName = getPackageName();
                 int i = 0;
                 for (PackageInfo packageInfo : packageInfos) {
                     if (((packageInfo.applicationInfo.flags & PackageManager.GET_ACTIVITIES) == 0)
@@ -140,8 +146,14 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
 
                         ProcessInfo info = new ProcessInfo();
                         info.appName = packageInfo.applicationInfo.loadLabel(pm).toString();
-                        info.isChecked = true;
+
                         info.packageName = packageInfo.packageName;
+                        if (desktopPackage.endsWith(info.packageName) || myPackageName.endsWith(info.packageName)) {
+                            info.isChecked = false;
+                        } else {
+                            info.isChecked = true;
+                        }
+
                         info.appIcon = packageInfo.applicationInfo.loadIcon(pm);
                         mDatas.add(info);
                         i++;
@@ -162,12 +174,16 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     }
 
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        initData();
+    }
 
     @Override
     public void onRefresh() {
         initData();
     }
-
 
 
     // 查询所有正在运行的应用程序信息： 包括他们所在的进程id和进程名
@@ -220,6 +236,25 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
 
     }
 
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.main,menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()){
+            case R.id.action_to_user_trajectory:
+                Intent intent = new Intent(MainActivity.this,UserTrajectoryActivity.class);
+                intent.putParcelableArrayListExtra(Constants.KEY_PARAM1,trajectories);
+                startActivity(intent);
+                break;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
     private ProcessInfo getAppInfo(ApplicationInfo app, int pid, String processName) {
         ProcessInfo appInfo = new ProcessInfo();
         appInfo.appName = ((String) app.loadLabel(pm));
@@ -232,5 +267,11 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         return appInfo;
     }
 
-//    class GetRunnigProcessTask extends AsyncTask<Void,>
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        EventBus.getDefault().unregister(this);
+    }
+
+    //    class GetRunnigProcessTask extends AsyncTask<Void,>
 }

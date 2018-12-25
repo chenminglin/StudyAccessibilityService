@@ -2,7 +2,9 @@ package com.bethena.studyaccessibilityservice.bean;
 
 import android.graphics.drawable.Drawable;
 
-public class ProcessInfo {
+import java.io.Serializable;
+
+public class ProcessInfo implements Serializable {
 
     public String appName;
     public String packageName;

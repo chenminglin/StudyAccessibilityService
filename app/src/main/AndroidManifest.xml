@@ -20,18 +20,24 @@
         </activity>
 
         <service
-            android:name=".CleanProcessService"
-            android:process=":accessibility"
-            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
-
+            android:name=".service.CleanProcessService"
+            android:label="@string/accessibility_name"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+            android:process=":accessibility">
             <intent-filter>
-                <action android:name="android.accessibilityservice.AccessibilityService"/>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
             </intent-filter>
 
             <meta-data
                 android:name="android.accessibilityservice"
-                android:resource="@xml/accessibility"/>
+                android:resource="@xml/accessibility" />
         </service>
+
+        <activity android:name=".UserTrajectoryActivity" />
+
+        <meta-data
+            android:name="com.google.android.actions"
+            android:resource="@xml/actions" />
     </application>
 
 </manifest>
