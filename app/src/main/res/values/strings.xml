@@ -2,5 +2,16 @@
     <string name="app_name">无障碍结束进程</string>
     <string name="accessibility_name">无障碍结束进程（推荐）</string>
 
+    <string name="accessibility_to_open_permission">请在列表中找到 %s ,打开辅助功能。</string>
+
     <string name="accessibility_description">这里是一个无障碍的description，产品可根据需要进行描述。</string>
+
+
+    <string name="accessibility_error">未知错误</string>
+
+    <string name="accessibility_button_not_fount">找不到可点击的按钮</string>
+
+    <string name="accessibility_view_not_fount">找不到界面</string>
+
+    <string name="accessibility_intercepter">服务被中断</string>
 </resources>

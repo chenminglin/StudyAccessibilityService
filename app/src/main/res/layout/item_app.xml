@@ -39,6 +39,9 @@
     <CheckBox
         android:id="@+id/cb"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:background="@drawable/mycheckbox"
+        android:button="@null"
+        android:clickable="false"/>
 
 </LinearLayout>

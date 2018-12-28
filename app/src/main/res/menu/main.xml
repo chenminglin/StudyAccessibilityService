@@ -7,4 +7,10 @@
         app:showAsAction="always"
         android:title="查看用户轨迹"/>
 
+    <item android:id="@+id/action_all"
+        app:showAsAction="collapseActionView"
+        android:title="全选"/>
+    <item android:id="@+id/action_none"
+        app:showAsAction="collapseActionView"
+        android:title="全不选"/>
 </menu>

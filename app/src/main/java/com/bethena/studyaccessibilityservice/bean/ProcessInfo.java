@@ -1,5 +1,6 @@
 package com.bethena.studyaccessibilityservice.bean;
 
+import android.content.pm.PackageInfo;
 import android.graphics.drawable.Drawable;
 
 import java.io.Serializable;
@@ -10,6 +11,8 @@ public class ProcessInfo implements Serializable {
     public String packageName;
     public Drawable appIcon;
     public boolean isChecked;
+
+    public PackageInfo packageInfo;
 
 
     @Override
