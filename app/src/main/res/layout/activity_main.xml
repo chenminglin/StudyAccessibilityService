@@ -9,7 +9,7 @@
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        android:background="@color/colorPrimary"/>
+        android:background="@color/colorPrimary" />
 
     <android.support.v4.widget.SwipeRefreshLayout
         android:id="@+id/refresh_layout"
@@ -25,11 +25,28 @@
             android:layout_height="match_parent" />
 
     </android.support.v4.widget.SwipeRefreshLayout>
-    
-    <Button
-        android:id="@+id/button"
+
+
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="清理"/>
+        android:orientation="horizontal">
 
+
+        <Button
+            android:id="@+id/button"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="清理" />
+
+        <Button
+            android:id="@+id/button2"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:onClick="clickButtonFloat"
+            android:text="悬浮窗权限" />
+
+    </LinearLayout>
 </LinearLayout>

@@ -1,7 +1,5 @@
 package com.bethena.studyaccessibilityservice;
 
-import android.app.ActivityManager;
-import android.app.Application;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -9,7 +7,9 @@ import android.content.IntentFilter;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.support.v4.widget.SwipeRefreshLayout;
@@ -30,6 +30,7 @@ import com.bethena.studyaccessibilityservice.bean.ProcessTransInfo;
 import com.bethena.studyaccessibilityservice.bean.UserTrajectory;
 import com.bethena.studyaccessibilityservice.service.CleanProcessService;
 import com.bethena.studyaccessibilityservice.utils.AppUtil;
+import com.bethena.studyaccessibilityservice.utils.CleanFloatPermissionUtil;
 import com.bethena.studyaccessibilityservice.utils.SharedPreferencesUtil;
 import com.chad.library.adapter.base.BaseQuickAdapter;
 import com.yqritc.recyclerviewflexibledivider.HorizontalDividerItemDecoration;
@@ -124,8 +125,8 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
                     intent.setFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
                     startActivity(intent);
                     String appname = getResources().getString(R.string.app_name);
-                    String toastString = getResources().getString(R.string.accessibility_to_open_permission,appname);
-                    Toast.makeText(getApplicationContext(),toastString,Toast.LENGTH_LONG).show();
+                    String toastString = getResources().getString(R.string.accessibility_to_open_permission, appname);
+                    Toast.makeText(getApplicationContext(), toastString, Toast.LENGTH_LONG).show();
                 } else {
                     mAppPkgs.clear();
 
@@ -156,7 +157,6 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     }
 
 
-
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onEvent(UserTrajectory trajectory) {
         trajectories.add(trajectory);
@@ -173,14 +173,25 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
 //        List<PackageInfo> packageInfos = pm.getInstalledPackages(PackageManager.GET_ACTIVITIES & PackageManager.GET_META_DATA & 0x00200000);
                 List<PackageInfo> packageInfos = pm.getInstalledPackages(0);
 
+//                List<ApplicationInfo> apps = pm.getInstalledApplications(PackageManager.MATCH_UNINSTALLED_PACKAGES);
+//
+//                for (ApplicationInfo applicationInfo : apps) {
+//                    if (((applicationInfo.flags & PackageManager.GET_ACTIVITIES) == 0)
+//                            && ((applicationInfo.flags & PackageManager.GET_META_DATA) == 0)
+//                            && ((applicationInfo.flags & 0x00200000) == 0)) {
+//                        String label = applicationInfo.loadLabel(pm).toString();
+//
+//                        Log.d(TAG, "label = " + label);
+//                    }
+//                }
 
                 int i = 0;
                 for (PackageInfo packageInfo : packageInfos) {
                     String appName = packageInfo.applicationInfo.loadLabel(pm).toString();
-                    if ("搜狗输入法小米版".equals(appName) || "360手机助手".equals(appName) || "清理大师".equals(appName)) {
-                        Log.d(TAG, "packageInfo.appName = " + packageInfo.applicationInfo.loadLabel(pm).toString()
-                                + "，packageInfo.applicationInfo.flags = " + packageInfo.applicationInfo.flags);
-                    }
+//                    if ("搜狗输入法小米版".equals(appName) || "360手机助手".equals(appName) || "清理大师".equals(appName)) {
+//                        Log.d(TAG, "packageInfo.appName = " + packageInfo.applicationInfo.loadLabel(pm).toString()
+//                                + "，packageInfo.applicationInfo.flags = " + packageInfo.applicationInfo.flags);
+//                    }
 
 
                     if (((packageInfo.applicationInfo.flags & PackageManager.GET_ACTIVITIES) == 0)
@@ -194,6 +205,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
                         ProcessInfo info = new ProcessInfo();
                         info.packageInfo = packageInfo;
                         info.appName = packageInfo.applicationInfo.loadLabel(pm).toString();
+
 
                         info.packageName = packageInfo.packageName;
                         if (ignoreAppPackage.contains(info.packageName)) {
@@ -266,7 +278,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         switch (item.getItemId()) {
             case R.id.action_to_user_trajectory:
                 Intent intent = new Intent(MainActivity.this, UserTrajectoryActivity.class);
-                intent.putParcelableArrayListExtra(Constants.KEY_PARAM1, trajectories);
+                intent.putParcelableArrayListExtra(KEY_PARAM1, trajectories);
                 startActivity(intent);
                 break;
             case R.id.action_all:
@@ -311,21 +323,45 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
 
     private void startNextAppSetting(boolean isNewTask) {
         Log.d(TAG, "startNextAppSetting   mAppPkgs.size()" + mAppPkgs.size());
+        Log.d(TAG, "startNextAppSetting   Build.VERSION.SDK_INT = " + Build.VERSION.SDK_INT);
         if (mAppPkgs.size() > 0) {
             ProcessTransInfo transInfo = mAppPkgs.get(0);
 
-            Intent intentService = new Intent(MainActivity.this, CleanProcessService.class);
+
+            Intent intentService = new Intent(Constants.ACTION_TO_ACC_DOIT);
             intentService.putExtra(KEY_PARAM1, mAppPkgs.get(0));
             intentService.putExtra(Constants.KEY_PARAM2, true);
-            startService(intentService);
+            sendBroadcast(intentService);
+
 
             Intent intentSetting = new Intent();
-            intentSetting.setAction(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-            Uri uri = Uri.fromParts("package", transInfo.packageName, null);
-            intentSetting.setFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION
-                    | Intent.FLAG_RECEIVER_REPLACE_PENDING);
 
-            intentSetting.setData(uri);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
+                intentSetting.setAction(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                Uri uri = Uri.fromParts("package", transInfo.packageName, null);
+                intentSetting.setData(uri);
+
+                final PackageManager packageManager = getPackageManager();
+                List<ResolveInfo> resolveInfo =
+                        packageManager.queryIntentActivities(intentSetting,
+                                PackageManager.MATCH_DEFAULT_ONLY);
+
+                Log.d(TAG, "startNextAppSetting   resolveInfo.size() = " + resolveInfo.size());
+
+            }
+
+
+            int flag = Intent.FLAG_ACTIVITY_NO_ANIMATION
+                    | Intent.FLAG_RECEIVER_REPLACE_PENDING;
+
+            int flagLieBao = 268468224;
+
+            Log.d(TAG, "startNextAppSetting   flag = " + flag);
+            Log.d(TAG, "startNextAppSetting   flagLieBao = " + flagLieBao);
+
+            intentSetting.setFlags(flag);
+
+
             startActivity(intentSetting);
 
 //            Intent intentActivity = new Intent(this, CleaningProcessActivity.class);
@@ -354,8 +390,6 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
 //            }
 
 
-
-
         } else {
 
             Intent intentService = new Intent(MainActivity.this, CleanProcessService.class);
@@ -367,6 +401,22 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         }
     }
 
+    private void removePkgAndStartNext(String packageName) {
+        Log.d("AccessibilityReceiver", "-------------packageName = " + packageName);
+        int n = 0;
+        for (; n < mAppPkgs.size(); ) {
+            ProcessTransInfo transInfo1 = mAppPkgs.get(n);
+
+            Log.d("AccessibilityReceiver", "-------------transInfo1 = " + transInfo1);
+            if (transInfo1.packageName.equals(packageName)) {
+                mAppPkgs.remove(transInfo1);
+                break;
+            } else {
+                n++;
+            }
+        }
+        startNextAppSetting(true);
+    }
 
 
     public class AccessibilityBroadcastReceiver extends BroadcastReceiver {
@@ -378,23 +428,8 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
                 case Constants.ACTION_RECEIVER_ACC_FINISH:
                     break;
                 case Constants.ACTION_RECEIVER_ACC_CLEAN_ONE:
-                    String packageName = intent.getStringExtra(Constants.KEY_PARAM1);
-                    Log.d("AccessibilityReceiver", "-------------packageName = " + packageName);
-                    int n = 0;
-                    for (; n < mAppPkgs.size(); ) {
-                        ProcessTransInfo transInfo1 = mAppPkgs.get(n);
-
-                        Log.d("AccessibilityReceiver", "-------------transInfo1 = " + transInfo1);
-                        if (transInfo1.packageName.equals(packageName)) {
-                            mAppPkgs.remove(transInfo1);
-                            break;
-                        } else {
-                            n++;
-                        }
-
-
-                    }
-                    startNextAppSetting(true);
+                    String packageName = intent.getStringExtra(KEY_PARAM1);
+                    removePkgAndStartNext(packageName);
                     break;
                 case Constants.ACTION_RECEIVER_ACC_CLEAN_ERROR:
                     Toast.makeText(context, R.string.accessibility_error, Toast.LENGTH_LONG).show();
@@ -412,14 +447,19 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
                     startNextAppSetting(true);
                     break;
                 case Constants.ACTION_RECEIVER_ACC_RECORD_ACTIVITY:
-                    UserTrajectory userTrajectory = intent.getParcelableExtra(Constants.KEY_PARAM1);
+                    UserTrajectory userTrajectory = intent.getParcelableExtra(KEY_PARAM1);
                     trajectories.add(userTrajectory);
                     break;
                 case Constants.ACTION_RECEIVER_ACC_PROCESS_HAVE_FINISH:
-                    startNextAppSetting(true);
+                    String packageName2 = intent.getStringExtra(KEY_PARAM1);
+                    removePkgAndStartNext(packageName2);
                     break;
             }
 
         }
+    }
+
+    public void clickButtonFloat(View view) {
+        CleanFloatPermissionUtil.jump2System(this, AppUtil.getPhoneModel());
     }
 }

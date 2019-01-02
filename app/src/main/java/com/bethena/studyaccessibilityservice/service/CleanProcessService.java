@@ -1,6 +1,9 @@
 package com.bethena.studyaccessibilityservice.service;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
@@ -8,6 +11,8 @@ import android.view.accessibility.AccessibilityNodeInfo;
 import com.bethena.studyaccessibilityservice.Constants;
 import com.bethena.studyaccessibilityservice.bean.ProcessTransInfo;
 import com.bethena.studyaccessibilityservice.bean.UserTrajectory;
+import com.bethena.studyaccessibilityservice.utils.AppUtil;
+import com.bethena.studyaccessibilityservice.utils.CleanFloatPermissionUtil;
 
 import org.greenrobot.eventbus.EventBus;
 
@@ -23,10 +28,11 @@ public class CleanProcessService extends BaseAccessibilityService {
 
     ArrayList<String> stopButtonTexts = new ArrayList<>();
 
+    ArrayList<String> stopButtonIds = new ArrayList<>();
+
     ArrayList<String> dialogViews = new ArrayList<>();
 
     ArrayList<String> dialogOkButtonTexts = new ArrayList<>();
-
 
     ArrayList<ProcessTransInfo> mAppPkgs;
 
@@ -34,12 +40,37 @@ public class CleanProcessService extends BaseAccessibilityService {
 
     boolean isStartClean;
 
+    ToAccessibilityBroadcastReceiver mReceiver;
+
 
     @Override
     public void onCreate() {
         super.onCreate();
         Log.d(TAG, "onCreate");
         initTexts();
+        initReceiver();
+
+        AccessibilityNodeInfo nodeInfo = getRootInActiveWindow();
+
+        if (nodeInfo != null) {
+            Log.d(TAG, "onCreate nodeInfo = " + nodeInfo.getClassName());
+
+        }
+
+    }
+
+    @Override
+    protected void onServiceConnected() {
+        super.onServiceConnected();
+        Log.d(TAG, "onServiceConnected ..... ");
+        AccessibilityNodeInfo nodeInfo = getRootInActiveWindow();
+
+        if (nodeInfo != null) {
+            Log.d(TAG, "onServiceConnected nodeInfo = " + nodeInfo.getClassName());
+            //服务开启了，走这里返回
+            performBackClick();
+
+        }
     }
 
     private void initTexts() {
@@ -52,6 +83,13 @@ public class CleanProcessService extends BaseAccessibilityService {
         stopButtonTexts.add("强行停止");
         stopButtonTexts.add("强制停止");
         stopButtonTexts.add("结束运行");
+        stopButtonTexts.add("结束运行");
+        stopButtonTexts.add("结束运行");
+        stopButtonTexts.add("结束运行");
+        stopButtonTexts.add("结束运行");
+
+        stopButtonIds.add("com.android.settings:id/force_stop_button");
+        stopButtonIds.add("android:id/button1");
 
         dialogViews.add("android.app.AlertDialog");
         dialogViews.add("miui.app.AlertDialog");
@@ -60,15 +98,21 @@ public class CleanProcessService extends BaseAccessibilityService {
         dialogOkButtonTexts.add("强制停止");
         dialogOkButtonTexts.add("强行停止");
 
+
+    }
+
+    private void initReceiver() {
+        IntentFilter filter = new IntentFilter();
+        mReceiver = new ToAccessibilityBroadcastReceiver();
+        filter.addAction(Constants.ACTION_TO_ACC_DOIT);
+
+        registerReceiver(mReceiver, filter);
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d(TAG, "onStartCommand startId = " + startId);
 
-        mCurrentAppPkg = intent.getParcelableExtra(Constants.KEY_PARAM1);
-        Log.d(TAG, "onStartCommand mCurrentAppPkg = " + mCurrentAppPkg);
-        isStartClean = intent.getBooleanExtra(Constants.KEY_PARAM2, false);
 
         return super.onStartCommand(intent, flags, startId);
     }
@@ -88,7 +132,7 @@ public class CleanProcessService extends BaseAccessibilityService {
 
 
         if (source != null) {
-            Log.d(TAG, "source.getClassName().toString()----" + source.getClassName().toString());
+//            Log.d(TAG, "source.getClassName().toString()----" + source.getClassName().toString());
             Log.d(TAG, "event.getPackageName----" + event.getPackageName());
             Log.d(TAG, "event.getClassName----" + event.getClassName());
             Log.d(TAG, "isStartClean----" + isStartClean);
@@ -117,6 +161,14 @@ public class CleanProcessService extends BaseAccessibilityService {
 
                 if (appSettingViews.contains(className)) {
                     AccessibilityNodeInfo info = null;
+
+                    for (String id : stopButtonIds) {
+                        AccessibilityNodeInfo inf = findViewByID(id);
+                        if (inf != null) {
+                            Log.e(TAG, "根据 id 找到 按钮 " + inf.getClassName());
+                        }
+                    }
+
                     for (String text : stopButtonTexts) {
                         info = findViewByText(text);
                         if (info != null) {
@@ -127,16 +179,15 @@ public class CleanProcessService extends BaseAccessibilityService {
 
                         if (info.isEnabled()) {
                             performViewClick(info);
-                        } else {
+                        } else {//进程已经结束
                             performBackClick();
-                            sendBroadcast(new Intent(Constants.ACTION_RECEIVER_ACC_CLEAN_BUTTON_NOT_FOUND));
+                            sendBroadcast(new Intent(Constants.ACTION_RECEIVER_ACC_PROCESS_HAVE_FINISH));
+
                         }
                     } else {
                         Log.e(TAG, "找不到 '停止' 按钮");
                         performBackClick();
-                        performBackClick();
-
-
+//                        performBackClick();
 
                         sendBroadcast(new Intent(Constants.ACTION_RECEIVER_ACC_CLEAN_BUTTON_NOT_FOUND));
                         isStartClean = false;
@@ -193,7 +244,26 @@ public class CleanProcessService extends BaseAccessibilityService {
     public void onDestroy() {
         super.onDestroy();
         Log.d(TAG, "onDestroy");
+        unregisterReceiver(mReceiver);
     }
 
 
+    class ToAccessibilityBroadcastReceiver extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Log.d(TAG, "onReceive ---- intent action = " + intent.getAction());
+
+            switch (intent.getAction()) {
+                case Constants.ACTION_TO_ACC_DOIT:
+                    mCurrentAppPkg = intent.getParcelableExtra(Constants.KEY_PARAM1);
+                    Log.d(TAG, "onStartCommand mCurrentAppPkg = " + mCurrentAppPkg);
+                    isStartClean = intent.getBooleanExtra(Constants.KEY_PARAM2, false);
+
+                    break;
+            }
+
+
+        }
+    }
 }
