@@ -3,13 +3,19 @@ package com.bethena.studyaccessibilityservice;
 import android.os.Parcelable;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.widget.TextView;
 
 import com.bethena.studyaccessibilityservice.bean.UserTrajectory;
+import com.bethena.studyaccessibilityservice.ui.TrajectoryAdapter;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class UserTrajectoryActivity extends AppCompatActivity {
+
+    RecyclerView mListView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -17,17 +23,14 @@ public class UserTrajectoryActivity extends AppCompatActivity {
         setContentView(R.layout.activity_user_trajectory);
 
 
-        List<Parcelable> list = getIntent().getParcelableArrayListExtra(Constants.KEY_PARAM1);
+        ArrayList<UserTrajectory> list = getIntent().getParcelableArrayListExtra(Constants.KEY_PARAM1);
 
 
-        TextView textView = findViewById(R.id.tv);
-        for(Parcelable p:list){
-            if(p instanceof UserTrajectory){
-                textView.append("应用包："+((UserTrajectory) p).packageName);
-                textView.append("界面名："+((UserTrajectory) p).viewClass);
-                textView.append("\n");
-            }
-        }
+        mListView = findViewById(R.id.list_view);
+        mListView.setLayoutManager(new LinearLayoutManager(this));
+        mListView.setAdapter(new TrajectoryAdapter(list));
+
+
 
     }
 }

@@ -1,8 +1,11 @@
 package com.bethena.studyaccessibilityservice.utils;
 
+import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ResolveInfo;
+import android.os.Build;
+import android.os.Debug;
 import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.Log;
@@ -60,5 +63,18 @@ public class AppUtil {
         } else {
             return res.activityInfo.packageName;
         }
+    }
+
+
+    public static long getMemorySizebyPid(final Context context, final int pid) {
+        final Debug.MemoryInfo[] processMemoryInfo =
+                ((ActivityManager)context.getSystemService(Context.ACTIVITY_SERVICE)).getProcessMemoryInfo(new int[] { pid });
+
+        if (processMemoryInfo != null) {
+            if (processMemoryInfo.length > 0) {
+                return processMemoryInfo[0].getTotalPss() * 1024;
+            }
+        }
+        return 0;
     }
 }

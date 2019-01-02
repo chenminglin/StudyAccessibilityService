@@ -82,13 +82,23 @@ public class BaseAccessibilityService extends AccessibilityService {
     /**
      * 模拟返回操作
      */
+
+    long lastPerformBackClickTime = 0;
+
     public void performBackClick() {
-        try {
-            Thread.sleep(500);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+
+//        if (lastPerformBackClickTime != 0 && System.currentTimeMillis() - lastPerformBackClickTime < 200) {
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+//        }
+
         performGlobalAction(GLOBAL_ACTION_BACK);
+        lastPerformBackClickTime = System.currentTimeMillis();
+
+
     }
 
     /**
@@ -122,7 +132,19 @@ public class BaseAccessibilityService extends AccessibilityService {
      * @return View
      */
     public AccessibilityNodeInfo findViewByText(String text) {
-        return findViewByText(text, false);
+        AccessibilityNodeInfo accessibilityNodeInfo = getRootInActiveWindow();
+        if (accessibilityNodeInfo == null) {
+            return null;
+        }
+        List<AccessibilityNodeInfo> nodeInfoList = accessibilityNodeInfo.findAccessibilityNodeInfosByText(text);
+        if (nodeInfoList != null && !nodeInfoList.isEmpty()) {
+            for (AccessibilityNodeInfo nodeInfo : nodeInfoList) {
+                if (nodeInfo != null) {
+                    return nodeInfo;
+                }
+            }
+        }
+        return null;
     }
 
     /**
@@ -232,7 +254,7 @@ public class BaseAccessibilityService extends AccessibilityService {
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
-        Log.d("BASE","onAccessibilityEvent");
+        Log.d("BASE", "onAccessibilityEvent");
     }
 
     @Override

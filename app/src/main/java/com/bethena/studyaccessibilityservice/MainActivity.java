@@ -1,5 +1,6 @@
 package com.bethena.studyaccessibilityservice;
 
+import android.app.ActivityManager;
 import android.app.Application;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -58,6 +59,8 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     ArrayList<ProcessTransInfo> mAppPkgs = new ArrayList<>();
 
     ArrayList<String> ignoreAppPackage = new ArrayList<>();
+
+    ArrayList<UserTrajectory> trajectories = new ArrayList<>();
 
     AccessibilityBroadcastReceiver mReceiver;
 
@@ -124,7 +127,6 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
                     String toastString = getResources().getString(R.string.accessibility_to_open_permission,appname);
                     Toast.makeText(getApplicationContext(),toastString,Toast.LENGTH_LONG).show();
                 } else {
-
                     mAppPkgs.clear();
 
                     for (ProcessInfo info : mDatas) {
@@ -137,10 +139,8 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
 
                     }
 
-
                     if (mAppPkgs.size() > 0) {
                         SharedPreferencesUtil.putBoolean(Constants.KEY_IS_START_CLEAN, true);
-
 
                         startNextAppSetting(true);
                     }
@@ -155,7 +155,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         initReceiver();
     }
 
-    ArrayList<UserTrajectory> trajectories = new ArrayList<>();
+
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onEvent(UserTrajectory trajectory) {
@@ -172,6 +172,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
                 PackageManager pm = getPackageManager();
 //        List<PackageInfo> packageInfos = pm.getInstalledPackages(PackageManager.GET_ACTIVITIES & PackageManager.GET_META_DATA & 0x00200000);
                 List<PackageInfo> packageInfos = pm.getInstalledPackages(0);
+
 
                 int i = 0;
                 for (PackageInfo packageInfo : packageInfos) {
@@ -236,6 +237,8 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         filter.addAction(Constants.ACTION_RECEIVER_ACC_CLEAN_ONE);
         filter.addAction(Constants.ACTION_RECEIVER_ACC_CLEAN_VIEW_NOT_FOUND);
         filter.addAction(Constants.ACTION_RECEIVER_ACC_CLEAN_NEXT_IF_HAVE);
+        filter.addAction(Constants.ACTION_RECEIVER_ACC_RECORD_ACTIVITY);
+        filter.addAction(Constants.ACTION_RECEIVER_ACC_PROCESS_HAVE_FINISH);
         registerReceiver(mReceiver, filter);
     }
 
@@ -364,6 +367,8 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         }
     }
 
+
+
     public class AccessibilityBroadcastReceiver extends BroadcastReceiver {
 
         @Override
@@ -387,6 +392,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
                             n++;
                         }
 
+
                     }
                     startNextAppSetting(true);
                     break;
@@ -403,6 +409,13 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
                     Toast.makeText(context, R.string.accessibility_intercepter, Toast.LENGTH_LONG).show();
                     break;
                 case Constants.ACTION_RECEIVER_ACC_CLEAN_NEXT_IF_HAVE:
+                    startNextAppSetting(true);
+                    break;
+                case Constants.ACTION_RECEIVER_ACC_RECORD_ACTIVITY:
+                    UserTrajectory userTrajectory = intent.getParcelableExtra(Constants.KEY_PARAM1);
+                    trajectories.add(userTrajectory);
+                    break;
+                case Constants.ACTION_RECEIVER_ACC_PROCESS_HAVE_FINISH:
                     startNextAppSetting(true);
                     break;
             }
