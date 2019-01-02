@@ -1,5 +1,6 @@
 package com.bethena.studyaccessibilityservice;
 
+import android.app.Application;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -8,6 +9,8 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.graphics.PixelFormat;
+import android.graphics.Point;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -28,6 +31,7 @@ import android.widget.Toast;
 import com.bethena.studyaccessibilityservice.bean.ProcessInfo;
 import com.bethena.studyaccessibilityservice.bean.ProcessTransInfo;
 import com.bethena.studyaccessibilityservice.bean.UserTrajectory;
+import com.bethena.studyaccessibilityservice.permission.FloatWindowManager;
 import com.bethena.studyaccessibilityservice.service.CleanProcessService;
 import com.bethena.studyaccessibilityservice.utils.AppUtil;
 import com.bethena.studyaccessibilityservice.utils.CleanFloatPermissionUtil;
@@ -368,26 +372,53 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
 //            intentActivity.putExtra(Constants.KEY_PARAM1, transInfo);
 //            startActivity(intentActivity);
 
-//            if (windowManager == null) {
-//                windowManager = (WindowManager) getApplicationContext().getSystemService(Application.WINDOW_SERVICE);
-//            }
-//
-//            if (textView == null) {
-//                textView = new TextView(getApplicationContext());
-//
-//                WindowManager.LayoutParams layoutParams = new WindowManager.LayoutParams();
-//                layoutParams.type = WindowManager.LayoutParams.TYPE_PHONE;
-//
-//                layoutParams.type = 2002;
-//                layoutParams.format = 1;
-//                layoutParams.flags = 56;
-//                layoutParams.width = -2;
-//                layoutParams.height = -2;
-//
-//                textView.setText("djfkasdjfakdjfkajflasdjldjf");
-//
-//                windowManager.addView(textView,layoutParams);
-//            }
+
+            if(FloatWindowManager.getInstance().checkPermission(this)){
+                if (windowManager == null) {
+                    windowManager = (WindowManager) getApplicationContext().getSystemService(Application.WINDOW_SERVICE);
+                }
+
+                if (textView == null) {
+                    textView = new TextView(getApplicationContext());
+
+                    Point size = new Point();
+                    windowManager.getDefaultDisplay().getSize(size);
+                    int screenWidth = size.x;
+                    int screenHeight = size.y;
+
+                    WindowManager.LayoutParams layoutParams = new WindowManager.LayoutParams();
+
+                    layoutParams.packageName = getPackageName();
+                    layoutParams.width = WindowManager.LayoutParams.WRAP_CONTENT;
+                    layoutParams.height = WindowManager.LayoutParams.WRAP_CONTENT;
+                    layoutParams.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
+                            | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_LAYOUT_INSET_DECOR
+                            | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN;
+
+
+                    int type = 0;
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        type = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
+                    } else {
+                        type = WindowManager.LayoutParams.TYPE_SYSTEM_ERROR;
+                    }
+
+                    layoutParams.type = type;
+
+                    layoutParams.format = PixelFormat.RGBA_8888;
+                    layoutParams.width = WindowManager.LayoutParams.WRAP_CONTENT;
+                    layoutParams.height = WindowManager.LayoutParams.WRAP_CONTENT;
+
+                    layoutParams.x = screenWidth - FloatWindowManager.dp2px(this, 100);
+                    layoutParams.y = screenHeight - FloatWindowManager.dp2px(this, 171);
+
+                    textView.setText("djfkasdjfakdjfkajflasdjldjf");
+
+                    windowManager.addView(textView,layoutParams);
+                }
+            }
+
+
 
 
         } else {
@@ -460,6 +491,19 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     }
 
     public void clickButtonFloat(View view) {
-        CleanFloatPermissionUtil.jump2System(this, AppUtil.getPhoneModel());
+//        CleanFloatPermissionUtil.jump2System(this, AppUtil.getPhoneModel());
+//        requestSettingCanDrawOverlays();
+
+        boolean checkPermission = FloatWindowManager.getInstance().checkPermission(this);
+
+        if(!checkPermission){
+            FloatWindowManager.getInstance().applyPermission(this);
+        }else {
+
+        }
+    }
+
+    private void requestSettingCanDrawOverlays() {
+
     }
 }
