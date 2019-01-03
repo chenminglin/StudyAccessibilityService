@@ -24,11 +24,22 @@
         android:text="1111" />
 
     <TextView
+        android:id="@+id/tv_cleaning"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@id/tv_appname"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="20dp"
         android:text="正在清理中..." />
+
+
+    <Button
+        android:layout_below="@id/tv_cleaning"
+        android:id="@+id/btn_cancel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="20dp"
+        android:text="取消"/>
 
 </RelativeLayout>

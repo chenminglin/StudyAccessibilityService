@@ -12,7 +12,7 @@ public interface Constants {
 
     /***
      *
-     *
+     * service to view
      * 每加一个action记得注册加一下
      *
      *
@@ -37,5 +37,16 @@ public interface Constants {
 
     String ACTION_RECEIVER_ACC_RECORD_ACTIVITY = "ACTION_RECEIVER_ACC_RECORD_ACTIVITY";
 
+    String ACTION_RECEIVER_ACC_ALREADY = "ACTION_RECEIVER_ACC_ALREADY";
+
+
+    /**
+     * View to Service
+     */
     String ACTION_TO_ACC_DOIT = "ACTION_TO_ACC_DOIT";
+
+    //视图请求服务是否已经准备好
+    String ACTION_REQUEST_SERVICE_READY = "ACTION_REQUEST_SERVICE_READY";
+
+    String ACTION_TO_CANCEL_SERVICE = "ACTION_TO_CANCEL_SERVICE";
 }

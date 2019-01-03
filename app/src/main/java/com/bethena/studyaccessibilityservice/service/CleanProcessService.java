@@ -9,12 +9,9 @@ import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 
 import com.bethena.studyaccessibilityservice.Constants;
+import com.bethena.studyaccessibilityservice.R;
 import com.bethena.studyaccessibilityservice.bean.ProcessTransInfo;
 import com.bethena.studyaccessibilityservice.bean.UserTrajectory;
-import com.bethena.studyaccessibilityservice.utils.AppUtil;
-import com.bethena.studyaccessibilityservice.utils.CleanFloatPermissionUtil;
-
-import org.greenrobot.eventbus.EventBus;
 
 import java.util.ArrayList;
 
@@ -40,7 +37,11 @@ public class CleanProcessService extends BaseAccessibilityService {
 
     boolean isStartClean;
 
+    boolean isCancel;
+
     ToAccessibilityBroadcastReceiver mReceiver;
+
+    String appName;
 
 
     @Override
@@ -57,6 +58,7 @@ public class CleanProcessService extends BaseAccessibilityService {
 
         }
 
+        appName = getResources().getString(R.string.app_name);
     }
 
     @Override
@@ -83,10 +85,8 @@ public class CleanProcessService extends BaseAccessibilityService {
         stopButtonTexts.add("强行停止");
         stopButtonTexts.add("强制停止");
         stopButtonTexts.add("结束运行");
-        stopButtonTexts.add("结束运行");
-        stopButtonTexts.add("结束运行");
-        stopButtonTexts.add("结束运行");
-        stopButtonTexts.add("结束运行");
+        stopButtonTexts.add("强制终了");
+
 
         stopButtonIds.add("com.android.settings:id/force_stop_button");
         stopButtonIds.add("android:id/button1");
@@ -97,6 +97,8 @@ public class CleanProcessService extends BaseAccessibilityService {
         dialogOkButtonTexts.add("确定");
         dialogOkButtonTexts.add("强制停止");
         dialogOkButtonTexts.add("强行停止");
+        dialogOkButtonTexts.add("结束运行");
+        dialogOkButtonTexts.add("强制终了");
 
 
     }
@@ -105,7 +107,6 @@ public class CleanProcessService extends BaseAccessibilityService {
         IntentFilter filter = new IntentFilter();
         mReceiver = new ToAccessibilityBroadcastReceiver();
         filter.addAction(Constants.ACTION_TO_ACC_DOIT);
-
         registerReceiver(mReceiver, filter);
     }
 
@@ -133,17 +134,18 @@ public class CleanProcessService extends BaseAccessibilityService {
 
         if (source != null) {
 //            Log.d(TAG, "source.getClassName().toString()----" + source.getClassName().toString());
-            Log.d(TAG, "event.getPackageName----" + event.getPackageName());
-            Log.d(TAG, "event.getClassName----" + event.getClassName());
             Log.d(TAG, "isStartClean----" + isStartClean);
         } else {
             Log.d(TAG, "source null ----");
         }
 
+        Log.d(TAG, "event.getPackageName----" + event.getPackageName());
+        Log.d(TAG, "event.getClassName----" + event.getClassName());
 
-        if (isStartClean) {
+
+        if (isStartClean && !isCancel) {
             UserTrajectory trajectory = new UserTrajectory(event.getPackageName().toString(), event.getClass().toString());
-            EventBus.getDefault().post(trajectory);
+//            EventBus.getDefault().post(trajectory);
 
             Intent recordIntent = new Intent(Constants.ACTION_RECEIVER_ACC_RECORD_ACTIVITY);
             recordIntent.putExtra(Constants.KEY_PARAM1, trajectory);
@@ -151,11 +153,11 @@ public class CleanProcessService extends BaseAccessibilityService {
             if (event.getEventType() == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
                     && appSettingPkgNames.contains(event.getPackageName())) {
 
+//                SystemClock.sleep(2000);
                 CharSequence className = event.getClassName();
 
                 if (className.equals("android.widget.FrameLayout")) {
                     Log.e(TAG, "这个不知道怎么来的。。。。");
-
                     return;
                 }
 
@@ -169,30 +171,56 @@ public class CleanProcessService extends BaseAccessibilityService {
                         }
                     }
 
+                    //先通过根window
                     for (String text : stopButtonTexts) {
                         info = findViewByText(text);
                         if (info != null) {
                             break;
                         }
                     }
-                    if (info != null) {
 
+                    if (isCancel) {
+                        Log.d(TAG,"取消1");
+                        performBackClick();
+                    } else if (info != null) {
                         if (info.isEnabled()) {
                             performViewClick(info);
                         } else {//进程已经结束
+                            Log.d(TAG,"进程已经结束1");
                             performBackClick();
                             sendBroadcast(new Intent(Constants.ACTION_RECEIVER_ACC_PROCESS_HAVE_FINISH));
+                        }
+                    } else {//找不到则通过event的Source去找
+                        Log.d(TAG,"找不到则通过event的Source去找");
+                        for (String text : stopButtonTexts) {
+                            info = findViewByTextFromNode(text, event.getSource());
+                            if (info != null) {
+                                break;
+                            }
+                        }
+
+                        if (info != null) {
+                            if (info.isEnabled()) {
+                                performViewClick(info);
+                            } else {//进程已经结束
+                                Log.d(TAG,"进程已经结束2");
+                                performBackClick();
+                                sendBroadcast(new Intent(Constants.ACTION_RECEIVER_ACC_PROCESS_HAVE_FINISH));
+                            }
+                        } else if (isRootOfAppView(event.getSource(), appName)) {
+                            //event.getPackageName() 和 appSettingViews.contains(className) 都是系统的，但是 event.getSource()却是 本应用的界面
+                            Log.d(TAG,"event.getPackageName() 和 appSettingViews.contains(className) 都是系统的，但是 event.getSource()却是 本应用的界面");
+                            sendBroadcast(new Intent(Constants.ACTION_RECEIVER_ACC_CLEAN_NEXT_IF_HAVE));
+                        } else {
+                            Log.e(TAG, "找不到 '停止' 按钮");
+                            performBackClick();
+
+                            sendBroadcast(new Intent(Constants.ACTION_RECEIVER_ACC_CLEAN_BUTTON_NOT_FOUND));
+                            isStartClean = false;
 
                         }
-                    } else {
-                        Log.e(TAG, "找不到 '停止' 按钮");
-                        performBackClick();
-//                        performBackClick();
-
-                        sendBroadcast(new Intent(Constants.ACTION_RECEIVER_ACC_CLEAN_BUTTON_NOT_FOUND));
-                        isStartClean = false;
                     }
-                } else if (dialogViews.contains(className)) {
+                } else if (dialogViews.contains(className) || (className != null && className.toString().endsWith("AlertDialog"))) {
                     AccessibilityNodeInfo info = null;
 
                     for (String text : dialogOkButtonTexts) {
@@ -201,7 +229,11 @@ public class CleanProcessService extends BaseAccessibilityService {
                             break;
                         }
                     }
-                    if (info != null) {
+                    if (isCancel) {
+                        Log.d(TAG,"取消2");
+                        performBackClick();
+                        performBackClick();
+                    } else if (info != null) {
                         performViewClick(info);
                         performBackClick();
 //                        startNextAppSetting(false);
@@ -226,7 +258,9 @@ public class CleanProcessService extends BaseAccessibilityService {
                 }
             } else if (event.getPackageName().equals(getPackageName())) {
                 Log.w(TAG, "出现了本应用页面");
-                sendBroadcast(new Intent(Constants.ACTION_RECEIVER_ACC_CLEAN_NEXT_IF_HAVE));
+                if (!isCancel) {
+                    sendBroadcast(new Intent(Constants.ACTION_RECEIVER_ACC_CLEAN_NEXT_IF_HAVE));
+                }
             } else {
                 Intent intent = new Intent();
                 intent.setAction(Constants.ACTION_RECEIVER_ACC_CLEAN_INTERCEPTER);
@@ -257,8 +291,12 @@ public class CleanProcessService extends BaseAccessibilityService {
             switch (intent.getAction()) {
                 case Constants.ACTION_TO_ACC_DOIT:
                     mCurrentAppPkg = intent.getParcelableExtra(Constants.KEY_PARAM1);
-                    Log.d(TAG, "onStartCommand mCurrentAppPkg = " + mCurrentAppPkg);
+                    Log.d(TAG, "onReceive mCurrentAppPkg = " + mCurrentAppPkg);
                     isStartClean = intent.getBooleanExtra(Constants.KEY_PARAM2, false);
+                    isCancel = false;
+                    break;
+                case Constants.ACTION_TO_CANCEL_SERVICE:
+                    isCancel = true;
 
                     break;
             }

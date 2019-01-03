@@ -18,6 +18,7 @@ import android.view.accessibility.AccessibilityNodeInfo;
 import java.util.List;
 
 public class BaseAccessibilityService extends AccessibilityService {
+    final String TAG = getClass().getSimpleName();
 
     private AccessibilityManager mAccessibilityManager;
     private Context mContext;
@@ -61,6 +62,8 @@ public class BaseAccessibilityService extends AccessibilityService {
         mContext.startActivity(intent);
     }
 
+
+    long lastPerformBackClickTime = 0;
     /**
      * 模拟点击事件
      *
@@ -77,28 +80,25 @@ public class BaseAccessibilityService extends AccessibilityService {
             }
             nodeInfo = nodeInfo.getParent();
         }
+        lastPerformBackClickTime = System.currentTimeMillis();
     }
 
     /**
      * 模拟返回操作
      */
 
-    long lastPerformBackClickTime = 0;
-
     public void performBackClick() {
 
-//        if (lastPerformBackClickTime != 0 && System.currentTimeMillis() - lastPerformBackClickTime < 200) {
+        if (lastPerformBackClickTime != 0 && System.currentTimeMillis() - lastPerformBackClickTime < 200) {
             try {
-                Thread.sleep(500);
+                Thread.sleep(700);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-//        }
+        }
 
         performGlobalAction(GLOBAL_ACTION_BACK);
         lastPerformBackClickTime = System.currentTimeMillis();
-
-
     }
 
     /**
@@ -146,6 +146,31 @@ public class BaseAccessibilityService extends AccessibilityService {
         }
         return null;
     }
+
+    /**
+     * 查找对应文本的View
+     *
+     * @param text text
+     * @return View
+     */
+    public AccessibilityNodeInfo findViewByTextFromNode(String text, AccessibilityNodeInfo rootNodeInfo) {
+        AccessibilityNodeInfo accessibilityNodeInfo = rootNodeInfo;
+        if (accessibilityNodeInfo == null) {
+            return null;
+        }
+        printAllNode(accessibilityNodeInfo);
+        List<AccessibilityNodeInfo> nodeInfoList = accessibilityNodeInfo.findAccessibilityNodeInfosByText(text);
+        if (nodeInfoList != null && !nodeInfoList.isEmpty()) {
+            for (AccessibilityNodeInfo nodeInfo : nodeInfoList) {
+
+                if (nodeInfo != null) {
+                    return nodeInfo;
+                }
+            }
+        }
+        return null;
+    }
+
 
     /**
      * 查找对应文本的View
@@ -243,6 +268,54 @@ public class BaseAccessibilityService extends AccessibilityService {
             clipboard.setPrimaryClip(clip);
             nodeInfo.performAction(AccessibilityNodeInfo.ACTION_FOCUS);
             nodeInfo.performAction(AccessibilityNodeInfo.ACTION_PASTE);
+        }
+    }
+
+    public void printAllNode(AccessibilityNodeInfo nodeInfo) {
+        if (nodeInfo == null) {
+            return;
+        }
+
+        if (nodeInfo.getText() != null) {
+            String text = nodeInfo.getText().toString();
+            Log.d(TAG, "printAllNode ===  text = " + text);
+        }
+        int childCount = nodeInfo.getChildCount();
+        if (childCount > 0) {
+            for (int n = 0; n < childCount; n++) {
+                printAllNode(nodeInfo.getChild(n));
+            }
+        }
+    }
+
+    /**
+     * 判断是否跳到了app视图，粗略的判断方式
+     *
+     * @return
+     */
+    public boolean isRootOfAppView(AccessibilityNodeInfo rootNodeInfo, String appName) {
+        if (rootNodeInfo == null) {
+            return false;
+        } else {
+            if (rootNodeInfo.getText() != null) {
+                String text = rootNodeInfo.getText().toString();
+                Log.d(TAG, "printAllNode ===  text = " + text);
+                if (appName.equals(text)) {
+                    return true;
+                }
+            }
+            int childCount = rootNodeInfo.getChildCount();
+            boolean isAppView = false;
+            if (childCount > 0) {
+                for (int n = 0; n < childCount; n++) {
+                    if (isRootOfAppView(rootNodeInfo.getChild(n), appName)) {
+                        isAppView = true;
+                        break;
+                    }
+
+                }
+            }
+            return isAppView;
         }
     }
 

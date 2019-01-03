@@ -11,6 +11,7 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.graphics.PixelFormat;
 import android.graphics.Point;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -25,7 +26,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bethena.studyaccessibilityservice.bean.ProcessInfo;
@@ -33,8 +33,8 @@ import com.bethena.studyaccessibilityservice.bean.ProcessTransInfo;
 import com.bethena.studyaccessibilityservice.bean.UserTrajectory;
 import com.bethena.studyaccessibilityservice.permission.FloatWindowManager;
 import com.bethena.studyaccessibilityservice.service.CleanProcessService;
+import com.bethena.studyaccessibilityservice.ui.CleaningProcessView;
 import com.bethena.studyaccessibilityservice.utils.AppUtil;
-import com.bethena.studyaccessibilityservice.utils.CleanFloatPermissionUtil;
 import com.bethena.studyaccessibilityservice.utils.SharedPreferencesUtil;
 import com.chad.library.adapter.base.BaseQuickAdapter;
 import com.yqritc.recyclerviewflexibledivider.HorizontalDividerItemDecoration;
@@ -68,6 +68,10 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     ArrayList<UserTrajectory> trajectories = new ArrayList<>();
 
     AccessibilityBroadcastReceiver mReceiver;
+
+    CleaningProcessView mCleaningWindow;
+
+    boolean isServiceStart;
 
     void initIgnore() {
         ignoreAppPackage.add("com.oasisfeng.greenify");
@@ -145,8 +149,8 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
                     }
 
                     if (mAppPkgs.size() > 0) {
+                        isServiceStart = true;
                         SharedPreferencesUtil.putBoolean(Constants.KEY_IS_START_CLEAN, true);
-
                         startNextAppSetting(true);
                     }
 
@@ -156,6 +160,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
 
 
         EventBus.getDefault().register(this);
+        pm = getPackageManager();
         initData();
         initReceiver();
     }
@@ -266,6 +271,12 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     }
 
     @Override
+    protected void onPause() {
+        super.onPause();
+
+    }
+
+    @Override
     public void onRefresh() {
         initData();
     }
@@ -323,11 +334,20 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
 
     WindowManager windowManager;
 
-    TextView textView;
-
     private void startNextAppSetting(boolean isNewTask) {
         Log.d(TAG, "startNextAppSetting   mAppPkgs.size()" + mAppPkgs.size());
         Log.d(TAG, "startNextAppSetting   Build.VERSION.SDK_INT = " + Build.VERSION.SDK_INT);
+
+//        try {
+//            Thread.sleep(1000);
+//        } catch (InterruptedException e) {
+//
+//            Log.e(TAG, "startNextAppSetting   e = " + e.getMessage());
+//        }
+        if (!isServiceStart) {
+            return;
+        }
+
         if (mAppPkgs.size() > 0) {
             ProcessTransInfo transInfo = mAppPkgs.get(0);
 
@@ -373,13 +393,35 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
 //            startActivity(intentActivity);
 
 
-            if(FloatWindowManager.getInstance().checkPermission(this)){
+            if (FloatWindowManager.getInstance().checkPermission(this)) {
                 if (windowManager == null) {
                     windowManager = (WindowManager) getApplicationContext().getSystemService(Application.WINDOW_SERVICE);
                 }
 
-                if (textView == null) {
-                    textView = new TextView(getApplicationContext());
+                if (mCleaningWindow == null) {
+                    View cleaningLayout = getLayoutInflater().inflate(R.layout.activity_cleaning_process, null);
+                    mCleaningWindow = new CleaningProcessView();
+                    mCleaningWindow.vRootView = cleaningLayout;
+                    mCleaningWindow.tvAppName = cleaningLayout.findViewById(R.id.tv_appname);
+                    mCleaningWindow.iVIconView = cleaningLayout.findViewById(R.id.iv_app_icon);
+                    mCleaningWindow.btnCancel = cleaningLayout.findViewById(R.id.btn_cancel);
+                    mCleaningWindow.mWindowManager = windowManager;
+
+                    mCleaningWindow.btnCancel.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            Log.d(TAG, "service cancel ");
+                            try {
+                                Thread.sleep(500);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                            dismissFloatWindow();
+                            mCleaningWindow.btnCancel.setClickable(false);
+                            isServiceStart = false;
+                            sendBroadcast(new Intent(Constants.ACTION_TO_CANCEL_SERVICE));
+                        }
+                    });
 
                     Point size = new Point();
                     windowManager.getDefaultDisplay().getSize(size);
@@ -406,29 +448,48 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
                     layoutParams.type = type;
 
                     layoutParams.format = PixelFormat.RGBA_8888;
-                    layoutParams.width = WindowManager.LayoutParams.WRAP_CONTENT;
-                    layoutParams.height = WindowManager.LayoutParams.WRAP_CONTENT;
+                    layoutParams.width = WindowManager.LayoutParams.MATCH_PARENT;
+                    layoutParams.height = WindowManager.LayoutParams.MATCH_PARENT;
 
-                    layoutParams.x = screenWidth - FloatWindowManager.dp2px(this, 100);
-                    layoutParams.y = screenHeight - FloatWindowManager.dp2px(this, 171);
+                    layoutParams.x = screenWidth;
+                    layoutParams.y = screenHeight;
 
-                    textView.setText("djfkasdjfakdjfkajflasdjldjf");
-
-                    windowManager.addView(textView,layoutParams);
+                    mCleaningWindow.layoutParams = layoutParams;
                 }
+
+                if (mCleaningWindow != null && !mCleaningWindow.isShowing) {
+                    mCleaningWindow.btnCancel.setClickable(true);
+                    windowManager.addView(mCleaningWindow.vRootView, mCleaningWindow.layoutParams);
+                    mCleaningWindow.isShowing = true;
+                }
+
+                Drawable icon = transInfo.packageInfo.applicationInfo.loadIcon(pm);
+                mCleaningWindow.iVIconView.setImageDrawable(icon);
+                mCleaningWindow.tvAppName.setText(transInfo.packageInfo.applicationInfo.loadLabel(pm));
             }
-
-
-
 
         } else {
 
-            Intent intentService = new Intent(MainActivity.this, CleanProcessService.class);
+//            Intent intentService = new Intent(MainActivity.this, CleanProcessService.class);
+//            intentService.putExtra(Constants.KEY_PARAM2, false);
+//            startService(intentService);
+
+            Intent intentService = new Intent(Constants.ACTION_TO_ACC_DOIT);
             intentService.putExtra(Constants.KEY_PARAM2, false);
-            startService(intentService);
+            sendBroadcast(intentService);
+
+            dismissFloatWindow();
 
             SharedPreferencesUtil.putBoolean(Constants.KEY_IS_START_CLEAN, false);
             initData();
+
+            isServiceStart = false;
+        }
+    }
+
+    public void dismissFloatWindow() {
+        if (mCleaningWindow != null && mCleaningWindow.isShowing) {
+            mCleaningWindow.dismissWindow();
         }
     }
 
@@ -463,16 +524,21 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
                     removePkgAndStartNext(packageName);
                     break;
                 case Constants.ACTION_RECEIVER_ACC_CLEAN_ERROR:
+                    dismissFloatWindow();
                     Toast.makeText(context, R.string.accessibility_error, Toast.LENGTH_LONG).show();
                     break;
                 case Constants.ACTION_RECEIVER_ACC_CLEAN_BUTTON_NOT_FOUND:
+                    dismissFloatWindow();
                     Toast.makeText(context, R.string.accessibility_button_not_fount, Toast.LENGTH_LONG).show();
                     break;
                 case Constants.ACTION_RECEIVER_ACC_CLEAN_VIEW_NOT_FOUND:
+                    dismissFloatWindow();
                     Toast.makeText(context, R.string.accessibility_view_not_fount, Toast.LENGTH_LONG).show();
                     break;
                 case Constants.ACTION_RECEIVER_ACC_CLEAN_INTERCEPTER:
-                    Toast.makeText(context, R.string.accessibility_intercepter, Toast.LENGTH_LONG).show();
+                    dismissFloatWindow();
+                    startNextAppSetting(true);
+//                    Toast.makeText(context, R.string.accessibility_intercepter, Toast.LENGTH_LONG).show();
                     break;
                 case Constants.ACTION_RECEIVER_ACC_CLEAN_NEXT_IF_HAVE:
                     startNextAppSetting(true);
@@ -496,9 +562,9 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
 
         boolean checkPermission = FloatWindowManager.getInstance().checkPermission(this);
 
-        if(!checkPermission){
+        if (!checkPermission) {
             FloatWindowManager.getInstance().applyPermission(this);
-        }else {
+        } else {
 
         }
     }
