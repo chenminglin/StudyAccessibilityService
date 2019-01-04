@@ -5,7 +5,7 @@
     android:accessibilityFlags="flagReportViewIds"
     android:canRetrieveWindowContent="true"
     android:description="@string/accessibility_description"
-    android:notificationTimeout="1000" />
+    android:notificationTimeout="500" />
 
 <!--
 x<code>accessibilityEventTypes </code>： 用来设置响应事件的类型，比如typeAllMask就是响应全部事件，typeNotificationStateChanged就是响应通知状态的改变，如果需要响应多种事件类型可以以 ‘ | ’ 隔开。

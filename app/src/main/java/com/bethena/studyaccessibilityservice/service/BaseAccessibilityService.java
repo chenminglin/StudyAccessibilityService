@@ -29,6 +29,7 @@ public class BaseAccessibilityService extends AccessibilityService {
         mAccessibilityManager = (AccessibilityManager) mContext.getSystemService(Context.ACCESSIBILITY_SERVICE);
     }
 
+
     public static BaseAccessibilityService getInstance() {
         if (mInstance == null) {
             mInstance = new BaseAccessibilityService();
@@ -91,7 +92,7 @@ public class BaseAccessibilityService extends AccessibilityService {
 
         if (lastPerformBackClickTime != 0 && System.currentTimeMillis() - lastPerformBackClickTime < 200) {
             try {
-                Thread.sleep(700);
+                Thread.sleep(500);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -169,6 +170,22 @@ public class BaseAccessibilityService extends AccessibilityService {
             }
         }
         return null;
+    }
+
+    public boolean isCleanTargetApp(String appname){
+        AccessibilityNodeInfo accessibilityNodeInfo = getRootInActiveWindow();
+
+        if(accessibilityNodeInfo == null){
+            return false;
+        }
+
+
+        List<AccessibilityNodeInfo> nodeInfoList = accessibilityNodeInfo.findAccessibilityNodeInfosByText(appname);
+        if (nodeInfoList != null && !nodeInfoList.isEmpty()) {
+            return true;
+        }
+
+        return false;
     }
 
 
@@ -278,7 +295,7 @@ public class BaseAccessibilityService extends AccessibilityService {
 
         if (nodeInfo.getText() != null) {
             String text = nodeInfo.getText().toString();
-            Log.d(TAG, "printAllNode ===  text = " + text);
+            Log.w(TAG, "printAllNode ===  text = " + text);
         }
         int childCount = nodeInfo.getChildCount();
         if (childCount > 0) {
@@ -299,7 +316,7 @@ public class BaseAccessibilityService extends AccessibilityService {
         } else {
             if (rootNodeInfo.getText() != null) {
                 String text = rootNodeInfo.getText().toString();
-                Log.d(TAG, "printAllNode ===  text = " + text);
+//                Log.d(TAG, "printAllNode ===  text = " + text);
                 if (appName.equals(text)) {
                     return true;
                 }

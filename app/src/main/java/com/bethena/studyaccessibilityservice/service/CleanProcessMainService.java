@@ -1,6 +1,7 @@
-package com.bethena.studyaccessibilityservice;
+package com.bethena.studyaccessibilityservice.service;
 
 import android.app.Application;
+import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -12,15 +13,17 @@ import android.graphics.Point;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
-import android.os.Bundle;
+import android.os.IBinder;
 import android.provider.Settings;
-import android.support.v7.app.AppCompatActivity;
+import android.support.annotation.Nullable;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Toast;
 
+import com.bethena.studyaccessibilityservice.Constants;
+import com.bethena.studyaccessibilityservice.R;
 import com.bethena.studyaccessibilityservice.bean.ProcessTransInfo;
 import com.bethena.studyaccessibilityservice.permission.FloatWindowManager;
 import com.bethena.studyaccessibilityservice.ui.CleaningProcessView;
@@ -31,12 +34,11 @@ import java.util.List;
 
 import static com.bethena.studyaccessibilityservice.Constants.KEY_PARAM1;
 
-public class CleaningProcessActivity extends AppCompatActivity {
-
+public class CleanProcessMainService extends Service {
 
     final String TAG = getClass().getSimpleName();
 
-    CleaningProcessActivity.AccessibilityBroadcastReceiver mReceiver;
+    AccessibilityBroadcastReceiver mReceiver;
 
     CleaningProcessView mCleaningWindow;
 
@@ -47,31 +49,43 @@ public class CleaningProcessActivity extends AppCompatActivity {
     WindowManager windowManager;
     PackageManager pm;
 
+
+    @Nullable
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-//        setContentView(R.layout.activity_cleaning_process);
-        getWindow().getDecorView().setBackgroundResource(android.R.color.transparent);
+    public IBinder onBind(Intent intent) {
+        return null;
+    }
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
         pm = getPackageManager();
         initReceiver();
-        if (getIntent().getExtras() != null) {
-            mAppPkgs = getIntent().getParcelableArrayListExtra(Constants.KEY_PARAM1);
+    }
+
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        Log.d(TAG, TAG + "  onStartCommand");
+        if (intent.getExtras() != null) {
+            mAppPkgs = intent.getParcelableArrayListExtra(Constants.KEY_PARAM1);
             isServiceStart = true;
             startNextAppSetting(true);
         }
 
-
+        return super.onStartCommand(intent, flags, startId);
     }
 
     @Override
-    protected void onDestroy() {
+    public void onDestroy() {
         super.onDestroy();
         unregisterReceiver(mReceiver);
+        Log.d(TAG, TAG + "  onDestroy");
     }
 
     private void initReceiver() {
         IntentFilter filter = new IntentFilter();
-        mReceiver = new CleaningProcessActivity.AccessibilityBroadcastReceiver();
+        mReceiver = new AccessibilityBroadcastReceiver();
         filter.addAction(Constants.ACTION_RECEIVER_ACC_FINISH);
         filter.addAction(Constants.ACTION_RECEIVER_ACC_CLEAN_INTERCEPTER);
         filter.addAction(Constants.ACTION_RECEIVER_ACC_CLEAN_BUTTON_NOT_FOUND);
@@ -83,7 +97,6 @@ public class CleaningProcessActivity extends AppCompatActivity {
         filter.addAction(Constants.ACTION_RECEIVER_ACC_PROCESS_HAVE_FINISH);
         registerReceiver(mReceiver, filter);
     }
-
 
     private void startNextAppSetting(boolean isNewTask) {
         Log.d(TAG, "startNextAppSetting   mAppPkgs.size()" + mAppPkgs.size());
@@ -126,7 +139,7 @@ public class CleaningProcessActivity extends AppCompatActivity {
 
 
             int flag = Intent.FLAG_ACTIVITY_NO_ANIMATION
-                    | Intent.FLAG_RECEIVER_REPLACE_PENDING;
+                    | Intent.FLAG_ACTIVITY_NO_HISTORY;
 
             int flagLieBao = Intent.FLAG_RECEIVER_FOREGROUND | Intent.FLAG_ACTIVITY_CLEAR_TASK;
 
@@ -235,7 +248,7 @@ public class CleaningProcessActivity extends AppCompatActivity {
             sendBroadcast(intentFinish);
             isServiceStart = false;
 
-            finish();
+            stopSelf();
         }
     }
 
@@ -303,6 +316,4 @@ public class CleaningProcessActivity extends AppCompatActivity {
 
         }
     }
-
-
 }

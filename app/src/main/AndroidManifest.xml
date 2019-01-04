@@ -3,7 +3,6 @@
     package="com.bethena.studyaccessibilityservice">
 
     <uses-permission android:name="android.permission.BIND_ACCESSIBILITY_SERVICE" />
-
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
     <application
@@ -44,14 +43,12 @@
 
         <activity
             android:name=".CleaningProcessActivity"
-            android:launchMode="singleTask" />
+            android:launchMode="singleTask"
+            android:theme="@style/NoBack"/>
 
-        <receiver
-            android:name=".MainActivity$AccessibilityBroadcastReceiver"
-            android:enabled="true"
-            android:exported="false">
+        <service android:name=".service.CleanProcessMainService"></service>
 
-        </receiver>
+
     </application>
 
 </manifest>

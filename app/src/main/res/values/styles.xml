@@ -13,4 +13,10 @@
     <style name="AppThemeNoActionBar" parent="Theme.AppCompat.Light.NoActionBar">
 
     </style>
+
+    <style name="NoBack" parent="AppThemeNoActionBar">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@null</item>
+
+    </style>
 </resources>
