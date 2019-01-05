@@ -10,6 +10,7 @@ import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.support.annotation.RequiresApi;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityManager;
@@ -65,6 +66,7 @@ public class BaseAccessibilityService extends AccessibilityService {
 
 
     long lastPerformBackClickTime = 0;
+
     /**
      * 模拟点击事件
      *
@@ -172,10 +174,10 @@ public class BaseAccessibilityService extends AccessibilityService {
         return null;
     }
 
-    public boolean isCleanTargetApp(String appname){
+    public boolean isCleanTargetApp(String appname) {
         AccessibilityNodeInfo accessibilityNodeInfo = getRootInActiveWindow();
 
-        if(accessibilityNodeInfo == null){
+        if (accessibilityNodeInfo == null) {
             return false;
         }
 
@@ -288,15 +290,17 @@ public class BaseAccessibilityService extends AccessibilityService {
         }
     }
 
+
+    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
     public void printAllNode(AccessibilityNodeInfo nodeInfo) {
         if (nodeInfo == null) {
             return;
         }
 
-        if (nodeInfo.getText() != null) {
-            String text = nodeInfo.getText().toString();
-            Log.w(TAG, "printAllNode ===  text = " + text);
-        }
+        Log.w(TAG, "printAllNode ===  text = " + nodeInfo.getText()
+                + ", descript = " + nodeInfo.getContentDescription()
+        +", className = "+nodeInfo.getClassName()+", resId = "+nodeInfo.getViewIdResourceName());
+
         int childCount = nodeInfo.getChildCount();
         if (childCount > 0) {
             for (int n = 0; n < childCount; n++) {

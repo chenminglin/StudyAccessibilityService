@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.Build;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
@@ -139,6 +140,8 @@ public class CleanProcessService extends BaseAccessibilityService {
         AccessibilityNodeInfo source = event.getSource();
 
 
+
+
         if (source != null) {
 //            Log.d(TAG, "source.getClassName().toString()----" + source.getClassName().toString());
             Log.d(TAG, "isStartClean----" + isStartClean);
@@ -174,6 +177,10 @@ public class CleanProcessService extends BaseAccessibilityService {
                 Log.d(TAG, "getRecordCount = " + event.getRecordCount());
 
                 if (appSettingViews.contains(className)) {
+                    if(Build.VERSION.SDK_INT >= 18){
+                        printAllNode(getRootInActiveWindow());
+                    }
+
                     AccessibilityNodeInfo info = null;
 
                     if (mCurrentAppPkg != null) {
