@@ -1,6 +1,7 @@
 package com.bethena.studyaccessibilityservice;
 
 import android.support.annotation.Nullable;
+import android.text.format.Formatter;
 
 import com.bethena.studyaccessibilityservice.bean.ProcessInfo;
 import com.chad.library.adapter.base.BaseQuickAdapter;
@@ -25,7 +26,9 @@ public class AppAdapter extends BaseQuickAdapter<ProcessInfo, BaseViewHolder> {
                 .setText(R.id.app_pkg, item.packageName)
                 .setChecked(R.id.cb, item.isChecked);
 
+        String size = Formatter.formatFileSize(mContext, item.size);
 
+        helper.setText(R.id.app_size,size);
         helper.addOnClickListener(R.id.item_root);
 
     }

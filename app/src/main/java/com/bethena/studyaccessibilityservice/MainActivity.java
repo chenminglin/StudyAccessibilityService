@@ -5,8 +5,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ApplicationInfo;
+import android.content.pm.IPackageStatsObserver;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.PackageStats;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.support.v4.widget.SwipeRefreshLayout;
@@ -18,6 +21,8 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.SeekBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bethena.studyaccessibilityservice.bean.ProcessInfo;
@@ -34,8 +39,13 @@ import com.yqritc.recyclerviewflexibledivider.HorizontalDividerItemDecoration;
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
+import org.w3c.dom.Text;
 
+import java.io.File;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import static com.bethena.studyaccessibilityservice.Constants.KEY_PARAM1;
@@ -61,11 +71,12 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
 
     AccessibilityBroadcastReceiver mReceiver;
 
+    SeekBar seekBar;
 
     void initIgnore() {
-        ignoreAppPackage.add("com.oasisfeng.greenify");
-        ignoreAppPackage.add("me.piebridge.brevent");
-        ignoreAppPackage.add("com.tencent.mm");
+//        ignoreAppPackage.add("com.oasisfeng.greenify");
+//        ignoreAppPackage.add("me.piebridge.brevent");
+//        ignoreAppPackage.add("com.tencent.mm");
         String desktopPackage = AppUtil.getLauncherPackageName(MainActivity.this);
         String myPackageName = getPackageName();
         ignoreAppPackage.add(desktopPackage);
@@ -119,11 +130,23 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
 
                 if (!isOpen) {
                     Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
-                    intent.setFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
+//                    intent.setFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
                     startActivity(intent);
                     String appname = getResources().getString(R.string.app_name);
                     String toastString = getResources().getString(R.string.accessibility_to_open_permission, appname);
                     Toast.makeText(getApplicationContext(), toastString, Toast.LENGTH_LONG).show();
+
+
+                    getWindow().getDecorView().postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            Intent intent1 = new Intent(MainActivity.this, GuideDialogActivity.class);
+//                            intent1.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            startActivity(intent1);
+                            overridePendingTransition(R.anim.c, R.anim.d);
+                        }
+                    }, 1000);
+
                 } else {
                     mAppPkgs.clear();
 
@@ -150,6 +173,26 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
             }
         });
 
+        final TextView tvCount = findViewById(R.id.clean_count);
+
+        seekBar = findViewById(R.id.seekbar);
+        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                tvCount.setText("选择个数：" + progress);
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
+
 
         EventBus.getDefault().register(this);
         pm = getPackageManager();
@@ -171,16 +214,22 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         registerReceiver(mReceiver, intentFilter);
     }
 
+    volatile int mComSizeCount = 0;
+    int threadCount = 0;
+
     private void initData() {
         mRefreshLayout.setRefreshing(true);
+        mComSizeCount = 0;
+
+        threadCount = 0;
         SharedPreferencesUtil.putBoolean(Constants.KEY_IS_START_CLEAN, false);
         new Thread(new Runnable() {
             @Override
             public void run() {
-                List<ProcessInfo> datasTemp = new ArrayList<>();
-                PackageManager pm = getPackageManager();
+                final List<ProcessInfo> datasTemp = new ArrayList<>();
+
 //        List<PackageInfo> packageInfos = pm.getInstalledPackages(PackageManager.GET_ACTIVITIES & PackageManager.GET_META_DATA & 0x00200000);
-                List<PackageInfo> packageInfos = pm.getInstalledPackages(0);
+                final List<PackageInfo> packageInfos = pm.getInstalledPackages(0);
 
 //                List<ApplicationInfo> apps = pm.getInstalledApplications(PackageManager.MATCH_UNINSTALLED_PACKAGES);
 //
@@ -195,56 +244,123 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
 //                }
 
                 int i = 0;
+
+                if (packageInfos.size() % 5 >= 1) {
+                    threadCount = packageInfos.size() / 5 + 1;
+                } else {
+                    threadCount = packageInfos.size() / 5;
+                }
+
+                for (int t = 0; t <= threadCount; t++) {
+                    Log.d(TAG, "t = " + t);
+                    final int startN = t;
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Log.d(TAG, "startN = " + startN);
+
+                            int m = 5 * startN;
+                            int tempM = m;
+
+                            for (; m < tempM + 5; m++) {
+                                Log.d(TAG, "m = " + m);
+                                if (m >= packageInfos.size()) {
+                                    continue;
+                                }
+                                PackageInfo packageInfo = packageInfos.get(m);
+
+                                if (packageInfo == null) {
+                                    continue;
+                                }
+
+                                if (((packageInfo.applicationInfo.flags & PackageManager.GET_ACTIVITIES) == 0)
+                                        && ((packageInfo.applicationInfo.flags & PackageManager.GET_META_DATA) == 0)
+                                        && ((packageInfo.applicationInfo.flags & 0x00200000) == 0)) {
+
+                                    if (ignoreAppPackage.contains(packageInfo.packageName)) {
+                                        mComSizeCount++;
+                                        continue;
+                                    }
+
+//                        Log.d(TAG, "packageInfo.packageName = " + packageInfo.packageName);
+//                        Log.d(TAG, "applicationInfo.name = " + packageInfo.applicationInfo.loadLabel(pm));
+
+
+                                    final ProcessInfo info = new ProcessInfo();
+                                    info.packageInfo = packageInfo;
+                                    info.appName = packageInfo.applicationInfo.loadLabel(pm).toString();
+
+
+                                    info.packageName = packageInfo.packageName;
+                                    info.size = new File(packageInfo.applicationInfo.publicSourceDir).length();
+                                    Log.d(TAG, "info.appName = " + info.appName + ", info.size = " + info.size);
+//                                    if (ignoreAppPackage.contains(info.packageName)) {
+//                                        info.isChecked = false;
+//                                    } else {
+                                    info.isChecked = true;
+//                                    }
+
+                                    info.appIcon = packageInfo.applicationInfo.loadIcon(pm);
+                                    datasTemp.add(info);
+
+
+                                }
+                                mComSizeCount++;
+                                Log.d(TAG, "mComSizeCount = " + mComSizeCount + " packageInfos.size() = " + packageInfos.size());
+
+                                if (mComSizeCount == packageInfos.size() - 1) {
+                                    Collections.sort(datasTemp, new Comparator<ProcessInfo>() {
+                                        @Override
+                                        public int compare(ProcessInfo o1, ProcessInfo o2) {
+                                            if (o1.size > o2.size) {
+                                                return -1;
+                                            } else if (o1.size < o2.size) {
+                                                return 1;
+                                            }
+                                            return 0;
+                                        }
+                                    });
+
+                                    mDatas.clear();
+                                    int endIndex = 0;
+                                    if (seekBar.getProgress() > datasTemp.size()) {
+                                        endIndex = datasTemp.size();
+                                    } else {
+                                        endIndex = seekBar.getProgress();
+                                    }
+                                    mDatas.addAll(datasTemp.subList(0, endIndex));
+
+                                    runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+
+                                            mRefreshLayout.setRefreshing(false);
+                                            mAdapter.notifyDataSetChanged();
+                                        }
+                                    });
+                                }
+                            }
+                        }
+                    }).start();
+                }
+
                 for (PackageInfo packageInfo : packageInfos) {
-                    String appName = packageInfo.applicationInfo.loadLabel(pm).toString();
+//                    String appName = packageInfo.applicationInfo.loadLabel(pm).toString();
 //                    if ("搜狗输入法小米版".equals(appName) || "360手机助手".equals(appName) || "清理大师".equals(appName)) {
 //                        Log.d(TAG, "packageInfo.appName = " + packageInfo.applicationInfo.loadLabel(pm).toString()
 //                                + "，packageInfo.applicationInfo.flags = " + packageInfo.applicationInfo.flags);
 //                    }
 
 
-                    if (((packageInfo.applicationInfo.flags & PackageManager.GET_ACTIVITIES) == 0)
-                            && ((packageInfo.applicationInfo.flags & PackageManager.GET_META_DATA) == 0)
-                            && ((packageInfo.applicationInfo.flags & 0x00200000) == 0)) {
-
-
-//                        Log.d(TAG, "packageInfo.packageName = " + packageInfo.packageName);
-//                        Log.d(TAG, "applicationInfo.name = " + packageInfo.applicationInfo.loadLabel(pm));
-
-                        ProcessInfo info = new ProcessInfo();
-                        info.packageInfo = packageInfo;
-                        info.appName = packageInfo.applicationInfo.loadLabel(pm).toString();
-
-
-                        info.packageName = packageInfo.packageName;
-                        if (ignoreAppPackage.contains(info.packageName)) {
-                            info.isChecked = false;
-                        } else {
-                            info.isChecked = true;
-                        }
-
-                        info.appIcon = packageInfo.applicationInfo.loadIcon(pm);
-                        datasTemp.add(info);
-
-                        i++;
-                    }
                 }
 
-                mDatas.clear();
-                mDatas.addAll(datasTemp);
-                Log.d(TAG, "i = " + i);
-
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        mRefreshLayout.setRefreshing(false);
-                        mAdapter.notifyDataSetChanged();
-                    }
-                });
 
             }
         }).start();
 
+    }
+
+    class AThread extends Thread {
 
     }
 
