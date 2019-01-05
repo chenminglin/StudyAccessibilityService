@@ -269,6 +269,7 @@ public class CleaningProcessActivity extends AppCompatActivity {
             Log.d("AccessibilityReceiver", "-------------" + intent.getAction());
             switch (intent.getAction()) {
                 case Constants.ACTION_RECEIVER_ACC_FINISH:
+                    finish();
                     break;
                 case Constants.ACTION_RECEIVER_ACC_CLEAN_ONE:
                     String packageName = intent.getStringExtra(KEY_PARAM1);
@@ -277,18 +278,22 @@ public class CleaningProcessActivity extends AppCompatActivity {
                 case Constants.ACTION_RECEIVER_ACC_CLEAN_ERROR:
                     dismissFloatWindow();
                     Toast.makeText(context, R.string.accessibility_error, Toast.LENGTH_LONG).show();
+                    finish();
                     break;
                 case Constants.ACTION_RECEIVER_ACC_CLEAN_BUTTON_NOT_FOUND:
                     dismissFloatWindow();
                     Toast.makeText(context, R.string.accessibility_button_not_fount, Toast.LENGTH_LONG).show();
+                    finish();
                     break;
                 case Constants.ACTION_RECEIVER_ACC_CLEAN_VIEW_NOT_FOUND:
                     dismissFloatWindow();
                     Toast.makeText(context, R.string.accessibility_view_not_fount, Toast.LENGTH_LONG).show();
+                    finish();
                     break;
                 case Constants.ACTION_RECEIVER_ACC_CLEAN_INTERCEPTER:
                     dismissFloatWindow();
                     startNextAppSetting(true);
+                    finish();
 //                    Toast.makeText(context, R.string.accessibility_intercepter, Toast.LENGTH_LONG).show();
                     break;
                 case Constants.ACTION_RECEIVER_ACC_CLEAN_NEXT_IF_HAVE:

@@ -209,12 +209,14 @@ public class CleanProcessService extends BaseAccessibilityService {
                         String packageName = mCurrentAppPkg.packageName;
                         intent.putExtra(Constants.KEY_PARAM1, packageName);
                         sendBroadcast(intent);
+                        Log.d(TAG,"取消退出");
 
                     } else if (mCurrentAppPkg != null
                             && mCurrentAppPkg.cleanAccidentType == ProcessTransInfo.CLEAN_ACCIDENT_TYPE_CLEAN_VIEW_NOT_FOUND) {//应用详情页找不到
                         performBackClick();
                         isStartClean = false;
                         sendBroadcast(new Intent(Constants.ACTION_RECEIVER_ACC_CLEAN_VIEW_NOT_FOUND));
+                        Log.d(TAG,"应用详情页找不到 退出");
                     }
                     else if (mCurrentAppPkg != null
                             && mCurrentAppPkg.cleanAccidentType == ProcessTransInfo.CLEAN_ACCIDENT_TYPE_CLEAN_BUTTON_NOT_FOUND) {//按钮无法找到
@@ -222,6 +224,8 @@ public class CleanProcessService extends BaseAccessibilityService {
                         performBackClick();
                         isStartClean = false;
                         sendBroadcast(new Intent(Constants.ACTION_RECEIVER_ACC_CLEAN_BUTTON_NOT_FOUND));
+
+                        Log.d(TAG,"按钮无法找到 退出");
                     }
                     else if (isCancel) {
                         Log.d(TAG, "取消1");
@@ -229,6 +233,7 @@ public class CleanProcessService extends BaseAccessibilityService {
                     } else if (info != null) {
                         if (info.isEnabled()) {
                             performViewClick(info);
+                            Log.d(TAG,"点击 停止");
                         } else {//进程已经结束
                             Log.d(TAG, "进程已经结束1");
                             performBackClick();
@@ -249,6 +254,7 @@ public class CleanProcessService extends BaseAccessibilityService {
                         if (info != null) {
                             if (info.isEnabled()) {
                                 performViewClick(info);
+                                Log.d(TAG,"点击 停止2");
                             } else {//进程已经结束
                                 Log.d(TAG, "进程已经结束2");
                                 performBackClick();
@@ -260,13 +266,10 @@ public class CleanProcessService extends BaseAccessibilityService {
                             }
                         } else if (isRootOfAppView(event.getSource(), appName)) {
                             //event.getPackageName() 和 appSettingViews.contains(className) 都是系统的，但是 event.getSource()却是 本应用的界面
-                            Log.d(TAG, "event.getPackageName() 和 appSettingViews.contains(className) 都是系统的，但是 event.getSource()却是 本应用的界面");
+                            Log.d(TAG, "event.getPackageName() 和 appSettingViews.contains(className) 都是系统的，但是 event.getSource()却是 本应用的界面2");
                             performBackClick();
                             sendBroadcast(new Intent(Constants.ACTION_RECEIVER_ACC_CLEAN_NEXT_IF_HAVE));
                         } else {
-
-
-
                             Log.e(TAG, "找不到 '停止' 按钮");
                             performBackClick();
                             mCurrentAppPkg.cleanAccidentType = ProcessTransInfo.CLEAN_ACCIDENT_TYPE_CLEAN_BUTTON_NOT_FOUND;
