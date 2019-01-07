@@ -5,11 +5,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ApplicationInfo;
-import android.content.pm.IPackageStatsObserver;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.content.pm.PackageStats;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.support.v4.widget.SwipeRefreshLayout;
@@ -29,7 +26,7 @@ import com.bethena.studyaccessibilityservice.bean.ProcessInfo;
 import com.bethena.studyaccessibilityservice.bean.ProcessTransInfo;
 import com.bethena.studyaccessibilityservice.bean.UserTrajectory;
 import com.bethena.studyaccessibilityservice.permission.FloatWindowManager;
-import com.bethena.studyaccessibilityservice.service.CleanProcessMainService;
+import com.bethena.studyaccessibilityservice.permission.autostart.AutoStartPermissionUtils;
 import com.bethena.studyaccessibilityservice.service.CleanProcessService;
 import com.bethena.studyaccessibilityservice.utils.AppUtil;
 import com.bethena.studyaccessibilityservice.utils.SharedPreferencesUtil;
@@ -39,10 +36,8 @@ import com.yqritc.recyclerviewflexibledivider.HorizontalDividerItemDecoration;
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
-import org.w3c.dom.Text;
 
 import java.io.File;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -214,14 +209,16 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         registerReceiver(mReceiver, intentFilter);
     }
 
-    volatile int mComSizeCount = 0;
     int threadCount = 0;
+    final int EVER_TREATH_HANDLE_APP_NUM = 10;
+
+    volatile int threadFinishCount = 0;
 
     private void initData() {
         mRefreshLayout.setRefreshing(true);
-        mComSizeCount = 0;
 
         threadCount = 0;
+        threadFinishCount = 0;
         SharedPreferencesUtil.putBoolean(Constants.KEY_IS_START_CLEAN, false);
         new Thread(new Runnable() {
             @Override
@@ -245,10 +242,10 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
 
                 int i = 0;
 
-                if (packageInfos.size() % 5 >= 1) {
-                    threadCount = packageInfos.size() / 5 + 1;
+                if (packageInfos.size() % EVER_TREATH_HANDLE_APP_NUM >= 1) {
+                    threadCount = packageInfos.size() / EVER_TREATH_HANDLE_APP_NUM + 1;
                 } else {
-                    threadCount = packageInfos.size() / 5;
+                    threadCount = packageInfos.size() / EVER_TREATH_HANDLE_APP_NUM;
                 }
 
                 for (int t = 0; t <= threadCount; t++) {
@@ -259,17 +256,19 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
                         public void run() {
                             Log.d(TAG, "startN = " + startN);
 
-                            int m = 5 * startN;
+                            int m = EVER_TREATH_HANDLE_APP_NUM * startN;
                             int tempM = m;
 
-                            for (; m < tempM + 5; m++) {
+                            for (; m < tempM + EVER_TREATH_HANDLE_APP_NUM; m++) {
                                 Log.d(TAG, "m = " + m);
                                 if (m >= packageInfos.size()) {
+                                    Log.d(TAG, "m more than size " + m);
                                     continue;
                                 }
                                 PackageInfo packageInfo = packageInfos.get(m);
 
                                 if (packageInfo == null) {
+                                    Log.d(TAG,"package info null");
                                     continue;
                                 }
 
@@ -278,7 +277,6 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
                                         && ((packageInfo.applicationInfo.flags & 0x00200000) == 0)) {
 
                                     if (ignoreAppPackage.contains(packageInfo.packageName)) {
-                                        mComSizeCount++;
                                         continue;
                                     }
 
@@ -305,40 +303,41 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
 
 
                                 }
-                                mComSizeCount++;
-                                Log.d(TAG, "mComSizeCount = " + mComSizeCount + " packageInfos.size() = " + packageInfos.size());
 
-                                if (mComSizeCount == packageInfos.size() - 1) {
-                                    Collections.sort(datasTemp, new Comparator<ProcessInfo>() {
-                                        @Override
-                                        public int compare(ProcessInfo o1, ProcessInfo o2) {
-                                            if (o1.size > o2.size) {
-                                                return -1;
-                                            } else if (o1.size < o2.size) {
-                                                return 1;
-                                            }
-                                            return 0;
+
+                            }
+                            threadFinishCount++;
+                            Log.d(TAG, "threadFinishCount = " + threadFinishCount);
+                            if (threadFinishCount == threadCount) {
+                                Collections.sort(datasTemp, new Comparator<ProcessInfo>() {
+                                    @Override
+                                    public int compare(ProcessInfo o1, ProcessInfo o2) {
+                                        if (o1.size > o2.size) {
+                                            return -1;
+                                        } else if (o1.size < o2.size) {
+                                            return 1;
                                         }
-                                    });
-
-                                    mDatas.clear();
-                                    int endIndex = 0;
-                                    if (seekBar.getProgress() > datasTemp.size()) {
-                                        endIndex = datasTemp.size();
-                                    } else {
-                                        endIndex = seekBar.getProgress();
+                                        return 0;
                                     }
-                                    mDatas.addAll(datasTemp.subList(0, endIndex));
+                                });
 
-                                    runOnUiThread(new Runnable() {
-                                        @Override
-                                        public void run() {
-
-                                            mRefreshLayout.setRefreshing(false);
-                                            mAdapter.notifyDataSetChanged();
-                                        }
-                                    });
+                                mDatas.clear();
+                                int endIndex = 0;
+                                if (seekBar.getProgress() > datasTemp.size()) {
+                                    endIndex = datasTemp.size();
+                                } else {
+                                    endIndex = seekBar.getProgress();
                                 }
+                                mDatas.addAll(datasTemp.subList(0, endIndex));
+
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+
+                                        mRefreshLayout.setRefreshing(false);
+                                        mAdapter.notifyDataSetChanged();
+                                    }
+                                });
                             }
                         }
                     }).start();
@@ -465,7 +464,9 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         }
     }
 
-    private void requestSettingCanDrawOverlays() {
-
+    public void clickButtonSelfReset(View view){
+        if(AutoStartPermissionUtils.isEnablePermissioActivity(this)){
+            AutoStartPermissionUtils.openPermissionActivity(this);
+        }
     }
 }

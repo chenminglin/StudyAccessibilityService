@@ -50,7 +50,7 @@ public class CleaningProcessActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-//        setContentView(R.layout.activity_cleaning_process);
+        setContentView(R.layout.activity_transparent);
         getWindow().getDecorView().setBackgroundResource(android.R.color.transparent);
         pm = getPackageManager();
         initReceiver();
@@ -160,6 +160,7 @@ public class CleaningProcessActivity extends AppCompatActivity {
                     mCleaningWindow.btnCancel.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
+                            mCleaningWindow.btnCancel.setClickable(false);
                             Log.d(TAG, "service cancel ");
                             try {
                                 Thread.sleep(500);
@@ -167,9 +168,10 @@ public class CleaningProcessActivity extends AppCompatActivity {
                                 e.printStackTrace();
                             }
                             dismissFloatWindow();
-                            mCleaningWindow.btnCancel.setClickable(false);
+
                             isServiceStart = false;
                             sendBroadcast(new Intent(Constants.ACTION_TO_CANCEL_SERVICE));
+                            finish();
                         }
                     });
 
@@ -208,9 +210,9 @@ public class CleaningProcessActivity extends AppCompatActivity {
                 }
 
                 if (mCleaningWindow != null && !mCleaningWindow.isShowing) {
-                    mCleaningWindow.btnCancel.setClickable(true);
-                    windowManager.addView(mCleaningWindow.vRootView, mCleaningWindow.layoutParams);
-                    mCleaningWindow.isShowing = true;
+//                    mCleaningWindow.btnCancel.setClickable(true);
+//                    windowManager.addView(mCleaningWindow.vRootView, mCleaningWindow.layoutParams);
+//                    mCleaningWindow.isShowing = true;
                 }
 
                 Drawable icon = transInfo.packageInfo.applicationInfo.loadIcon(pm);
@@ -293,7 +295,7 @@ public class CleaningProcessActivity extends AppCompatActivity {
                 case Constants.ACTION_RECEIVER_ACC_CLEAN_INTERCEPTER:
                     dismissFloatWindow();
                     startNextAppSetting(true);
-                    finish();
+//                    finish();
 //                    Toast.makeText(context, R.string.accessibility_intercepter, Toast.LENGTH_LONG).show();
                     break;
                 case Constants.ACTION_RECEIVER_ACC_CLEAN_NEXT_IF_HAVE:

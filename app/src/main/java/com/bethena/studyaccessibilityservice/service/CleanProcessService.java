@@ -322,7 +322,7 @@ public class CleanProcessService extends BaseAccessibilityService {
                 Intent intent = new Intent();
                 intent.setAction(Constants.ACTION_RECEIVER_ACC_CLEAN_INTERCEPTER);
                 sendBroadcast(intent);
-                isStartClean = false;
+//                isStartClean = false;
                 Log.w(TAG, "强行停止 任务中断");
             }
         }
