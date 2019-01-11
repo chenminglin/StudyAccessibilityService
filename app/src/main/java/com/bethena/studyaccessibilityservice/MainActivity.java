@@ -38,6 +38,7 @@ import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
 import java.io.File;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -81,6 +82,8 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+
         initIgnore();
         setContentView(R.layout.activity_main);
 
@@ -249,26 +252,26 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
                 }
 
                 for (int t = 0; t <= threadCount; t++) {
-                    Log.d(TAG, "t = " + t);
+//                    Log.d(TAG, "t = " + t);
                     final int startN = t;
                     new Thread(new Runnable() {
                         @Override
                         public void run() {
-                            Log.d(TAG, "startN = " + startN);
+//                            Log.d(TAG, "startN = " + startN);
 
                             int m = EVER_TREATH_HANDLE_APP_NUM * startN;
                             int tempM = m;
 
                             for (; m < tempM + EVER_TREATH_HANDLE_APP_NUM; m++) {
-                                Log.d(TAG, "m = " + m);
+//                                Log.d(TAG, "m = " + m);
                                 if (m >= packageInfos.size()) {
-                                    Log.d(TAG, "m more than size " + m);
+//                                    Log.d(TAG, "m more than size " + m);
                                     continue;
                                 }
                                 PackageInfo packageInfo = packageInfos.get(m);
 
                                 if (packageInfo == null) {
-                                    Log.d(TAG,"package info null");
+//                                    Log.d(TAG, "package info null");
                                     continue;
                                 }
 
@@ -464,8 +467,8 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         }
     }
 
-    public void clickButtonSelfReset(View view){
-        if(AutoStartPermissionUtils.isEnablePermissioActivity(this)){
+    public void clickButtonSelfReset(View view) {
+        if (AutoStartPermissionUtils.isEnablePermissioActivity(this)) {
             AutoStartPermissionUtils.openPermissionActivity(this);
         }
     }

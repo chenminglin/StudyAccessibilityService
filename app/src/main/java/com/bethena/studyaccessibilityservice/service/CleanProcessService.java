@@ -1,5 +1,6 @@
 package com.bethena.studyaccessibilityservice.service;
 
+import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -63,6 +64,8 @@ public class CleanProcessService extends BaseAccessibilityService {
 
 
         appName = getResources().getString(R.string.app_name);
+
+
     }
 
     @Override
@@ -77,6 +80,11 @@ public class CleanProcessService extends BaseAccessibilityService {
             performBackClick();
 
         }
+
+
+
+
+
 
     }
 
@@ -139,7 +147,7 @@ public class CleanProcessService extends BaseAccessibilityService {
 
         AccessibilityNodeInfo source = event.getSource();
 
-
+        overridePendingTransition(0,0);
 
 
         if (source != null) {

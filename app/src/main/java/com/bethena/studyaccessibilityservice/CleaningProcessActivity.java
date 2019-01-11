@@ -82,6 +82,8 @@ public class CleaningProcessActivity extends AppCompatActivity {
         filter.addAction(Constants.ACTION_RECEIVER_ACC_RECORD_ACTIVITY);
         filter.addAction(Constants.ACTION_RECEIVER_ACC_PROCESS_HAVE_FINISH);
         registerReceiver(mReceiver, filter);
+
+
     }
 
 

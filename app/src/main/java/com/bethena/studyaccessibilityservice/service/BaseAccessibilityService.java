@@ -16,6 +16,8 @@ import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityManager;
 import android.view.accessibility.AccessibilityNodeInfo;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.List;
 
 public class BaseAccessibilityService extends AccessibilityService {
@@ -35,6 +37,7 @@ public class BaseAccessibilityService extends AccessibilityService {
         if (mInstance == null) {
             mInstance = new BaseAccessibilityService();
         }
+
         return mInstance;
     }
 
@@ -101,6 +104,7 @@ public class BaseAccessibilityService extends AccessibilityService {
         }
 
         performGlobalAction(GLOBAL_ACTION_BACK);
+
         lastPerformBackClickTime = System.currentTimeMillis();
     }
 
@@ -114,6 +118,7 @@ public class BaseAccessibilityService extends AccessibilityService {
             e.printStackTrace();
         }
         performGlobalAction(AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD);
+
     }
 
     /**
@@ -299,7 +304,7 @@ public class BaseAccessibilityService extends AccessibilityService {
 
         Log.w(TAG, "printAllNode ===  text = " + nodeInfo.getText()
                 + ", descript = " + nodeInfo.getContentDescription()
-        +", className = "+nodeInfo.getClassName()+", resId = "+nodeInfo.getViewIdResourceName());
+                + ", className = " + nodeInfo.getClassName() + ", resId = " + nodeInfo.getViewIdResourceName());
 
         int childCount = nodeInfo.getChildCount();
         if (childCount > 0) {
@@ -346,9 +351,41 @@ public class BaseAccessibilityService extends AccessibilityService {
 
     }
 
+    protected void overridePendingTransition(int enterAnim, int exitAnim) {
+        try {
+
+            Class serviceClass = getClass()
+                    .getSuperclass()
+                    .getSuperclass()
+                    .getSuperclass();
+            Field mActivityManager = serviceClass
+                    .getDeclaredField("mActivityManager");
+            Field mToken = serviceClass
+                    .getDeclaredField("mToken");
+//            mActivityManager.getClass().getMethod("overridePendingTransition");
+
+
+            Method method = mActivityManager.getType()
+                    .getDeclaredMethod("overridePendingTransition", mToken.getType(), String.class, int.class, int.class);
+
+//            Log.d(TAG,"mActivityManager.getType()  = "+);
+//            for (Method method : mActivityManager.getType().getDeclaredMethods()) {
+            Log.d(TAG, "" + method.getName());
+
+            method.invoke(mActivityManager.get(this),mToken.get(this),getPackageName(),enterAnim,exitAnim);
+
+//            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+
+    }
+
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
         Log.d("BASE", "onAccessibilityEvent");
+
     }
 
     @Override
