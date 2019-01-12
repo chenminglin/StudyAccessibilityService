@@ -1,10 +1,12 @@
 package com.bethena.studyaccessibilityservice;
 
+import android.content.Intent;
 import android.os.Parcelable;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.widget.TextView;
 
 import com.bethena.studyaccessibilityservice.bean.UserTrajectory;
@@ -31,6 +33,14 @@ public class UserTrajectoryActivity extends AppCompatActivity {
         mListView.setAdapter(new TrajectoryAdapter(list));
 
 
+
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+
+        Log.d("UserTrajectoryActivity","onNewIntent");
 
     }
 }

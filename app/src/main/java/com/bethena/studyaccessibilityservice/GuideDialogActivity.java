@@ -31,4 +31,11 @@ public class GuideDialogActivity extends Activity {
 
         setContentView(R.layout.activity_guide_dialog);
     }
+
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+    }
 }

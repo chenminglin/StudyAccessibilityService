@@ -7,6 +7,7 @@ import android.content.IntentFilter;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.support.v4.widget.SwipeRefreshLayout;
@@ -142,6 +143,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
                         }
                     }, 1000);
 
+
                 } else {
                     mAppPkgs.clear();
 
@@ -211,7 +213,6 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
 
     int threadCount = 0;
     final int EVER_TREATH_HANDLE_APP_NUM = 10;
-
     volatile int threadFinishCount = 0;
 
     private void initData() {
@@ -268,7 +269,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
                                 PackageInfo packageInfo = packageInfos.get(m);
 
                                 if (packageInfo == null) {
-                                    Log.d(TAG,"package info null");
+                                    Log.d(TAG, "package info null");
                                     continue;
                                 }
 
@@ -279,9 +280,6 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
                                     if (ignoreAppPackage.contains(packageInfo.packageName)) {
                                         continue;
                                     }
-
-//                        Log.d(TAG, "packageInfo.packageName = " + packageInfo.packageName);
-//                        Log.d(TAG, "applicationInfo.name = " + packageInfo.applicationInfo.loadLabel(pm));
 
 
                                     final ProcessInfo info = new ProcessInfo();
@@ -367,13 +365,13 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     @Override
     protected void onResume() {
         super.onResume();
-
+        Log.d(TAG, "onResume");
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-
+        Log.d(TAG, "onPause");
     }
 
     @Override
@@ -429,6 +427,8 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         super.onDestroy();
         EventBus.getDefault().unregister(this);
         unregisterReceiver(mReceiver);
+
+        Log.d(TAG, "onDestroy");
     }
 
 
@@ -450,6 +450,18 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         }
     }
 
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        Log.d(TAG, "onNewIntent");
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        Log.d(TAG, "onStart");
+    }
+
 
     public void clickButtonFloat(View view) {
 //        CleanFloatPermissionUtil.jump2System(this, AppUtil.getPhoneModel());
@@ -464,9 +476,65 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         }
     }
 
-    public void clickButtonSelfReset(View view){
-        if(AutoStartPermissionUtils.isEnablePermissioActivity(this)){
+    public void clickButtonSelfReset(View view) {
+        if (AutoStartPermissionUtils.isEnablePermissioActivity(this)) {
             AutoStartPermissionUtils.openPermissionActivity(this);
         }
+    }
+
+    public void mytest(View view) {
+        startDelayActivity(UserTrajectoryActivity.class, 0, false);
+
+        startDelayActivity(ScrollingActivity.class, 1000, false);
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+
+                        Intent intent = new Intent();
+                        intent.setAction(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                        Uri uri = Uri.fromParts("package", getPackageName(), null);
+                        int flag = Intent.FLAG_ACTIVITY_NO_ANIMATION
+                                | Intent.FLAG_RECEIVER_REPLACE_PENDING;
+                        intent.addFlags(flag);
+                        intent.setData(uri);
+                        startActivity(intent);
+                    }
+                });
+            }
+        }).start();
+
+        startDelayActivity(UserTrajectoryActivity.class, 3000, true);
+    }
+
+    private void startDelayActivity(final Class clazz, final long delayTime, final boolean isClearTop) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Thread.sleep(delayTime);
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Intent intent1 = new Intent(MainActivity.this, clazz);
+                            if (isClearTop) {
+                                intent1.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP );
+                            }
+                            startActivity(intent1);
+                        }
+                    });
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
     }
 }

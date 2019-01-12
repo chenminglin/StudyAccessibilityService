@@ -134,8 +134,6 @@ public class CleaningProcessActivity extends AppCompatActivity {
             Log.d(TAG, "startNextAppSetting   flagLieBao = " + flagLieBao);
 
             intentSetting.setFlags(flag);
-
-
             startActivity(intentSetting);
 
 //            Intent intentActivity = new Intent(this, CleaningProcessActivity.class);
@@ -209,11 +207,11 @@ public class CleaningProcessActivity extends AppCompatActivity {
                     mCleaningWindow.layoutParams = layoutParams;
                 }
 
-                if (mCleaningWindow != null && !mCleaningWindow.isShowing) {
+//                if (mCleaningWindow != null && !mCleaningWindow.isShowing) {
 //                    mCleaningWindow.btnCancel.setClickable(true);
 //                    windowManager.addView(mCleaningWindow.vRootView, mCleaningWindow.layoutParams);
 //                    mCleaningWindow.isShowing = true;
-                }
+//                }
 
                 Drawable icon = transInfo.packageInfo.applicationInfo.loadIcon(pm);
                 mCleaningWindow.iVIconView.setImageDrawable(icon);

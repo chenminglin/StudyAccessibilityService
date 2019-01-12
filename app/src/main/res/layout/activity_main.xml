@@ -78,5 +78,13 @@
             android:onClick="clickButtonSelfReset"
             android:text="自启动权限"/>
 
+        <Button
+            android:id="@+id/button4"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:onClick="mytest"
+            android:text="测试按钮"/>
+
     </LinearLayout>
 </LinearLayout>

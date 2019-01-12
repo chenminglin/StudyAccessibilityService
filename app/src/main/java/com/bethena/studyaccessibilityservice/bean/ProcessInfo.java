@@ -8,8 +8,6 @@ import java.lang.reflect.Method;
 
 public class ProcessInfo implements Serializable {
 
-    public Method mGetPackageSizeInfoMethod;
-
     public String appName;
     public String packageName;
     public Drawable appIcon;

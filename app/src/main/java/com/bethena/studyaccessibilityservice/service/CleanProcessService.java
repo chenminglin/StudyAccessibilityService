@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Build;
+import android.support.annotation.RequiresApi;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
@@ -40,7 +41,7 @@ public class CleanProcessService extends BaseAccessibilityService {
 
     boolean isStartClean;
 
-    boolean isCancel;
+    boolean isToCancel;
 
     ToAccessibilityBroadcastReceiver mReceiver;
 
@@ -133,6 +134,7 @@ public class CleanProcessService extends BaseAccessibilityService {
 
     AccessibilityNodeInfo mSource;
 
+    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
         Log.d(TAG, "onAccessibilityEvent");
@@ -155,7 +157,7 @@ public class CleanProcessService extends BaseAccessibilityService {
         Log.d(TAG, "event.getClassName----" + event.getClassName());
 
 
-        if (isStartClean && !isCancel) {
+        if (isStartClean && !isToCancel) {
             UserTrajectory trajectory = new UserTrajectory(event.getPackageName().toString(), event.getClass().toString());
 //            EventBus.getDefault().post(trajectory);
 
@@ -234,9 +236,10 @@ public class CleanProcessService extends BaseAccessibilityService {
 
                         Log.d(TAG,"按钮无法找到 退出");
                     }
-                    else if (isCancel) {
+                    else if (isToCancel) {
                         Log.d(TAG, "取消1");
                         performBackClick();
+                        isStartClean = true;
                     } else if (info != null) {
                         if (info.isEnabled()) {
                             performViewClick(info);
@@ -294,9 +297,10 @@ public class CleanProcessService extends BaseAccessibilityService {
                             break;
                         }
                     }
-                    if (isCancel) {
+                    if (isToCancel) {
                         Log.d(TAG, "取消2");
                         performBackClick();
+                        isStartClean = true;
                     } else if (info != null) {
                         performViewClick(info);
                         mCurrentAppPkg.isCleaned = true;
@@ -315,7 +319,7 @@ public class CleanProcessService extends BaseAccessibilityService {
                 }
             } else if (event.getPackageName().equals(getPackageName())) {
                 Log.w(TAG, "出现了本应用页面");
-                if (!isCancel) {
+                if (!isToCancel) {
                     sendBroadcast(new Intent(Constants.ACTION_RECEIVER_ACC_CLEAN_NEXT_IF_HAVE));
                 }
             } else {
@@ -350,10 +354,10 @@ public class CleanProcessService extends BaseAccessibilityService {
                     mCurrentAppPkg = intent.getParcelableExtra(Constants.KEY_PARAM1);
                     Log.d(TAG, "onReceive mCurrentAppPkg = " + mCurrentAppPkg);
                     isStartClean = intent.getBooleanExtra(Constants.KEY_PARAM2, false);
-                    isCancel = false;
+                    isToCancel = false;
                     break;
                 case Constants.ACTION_TO_CANCEL_SERVICE:
-                    isCancel = true;
+                    isToCancel = true;
 
                     break;
             }
