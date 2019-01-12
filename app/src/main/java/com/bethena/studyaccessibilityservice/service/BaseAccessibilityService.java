@@ -371,8 +371,11 @@ public class BaseAccessibilityService extends AccessibilityService {
 //            Log.d(TAG,"mActivityManager.getType()  = "+);
 //            for (Method method : mActivityManager.getType().getDeclaredMethods()) {
             Log.d(TAG, "" + method.getName());
+            Log.d(TAG, "" + mActivityManager.get(this));
+            Log.d(TAG, "" + mToken.get(this));
+            Log.d(TAG, "" + getPackageName());
 
-            method.invoke(mActivityManager.get(this),mToken.get(this),getPackageName(),enterAnim,exitAnim);
+//            method.invoke(mActivityManager.get(this),mToken.get(this),getPackageName(),enterAnim,exitAnim);
 
 //            }
         } catch (Exception e) {
