@@ -36,6 +36,6 @@ public class GuideDialogActivity extends Activity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-
+//        overridePendingTransition(R.anim.c, R.anim.d);
     }
 }

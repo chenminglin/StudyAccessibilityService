@@ -7,6 +7,7 @@ import android.content.IntentFilter;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.ProviderInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
@@ -92,6 +93,16 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
 
         mRefreshLayout = findViewById(R.id.refresh_layout);
 
+        for (PackageInfo pack : getPackageManager().getInstalledPackages(PackageManager.GET_PROVIDERS)) {
+            ProviderInfo[] providers = pack.providers;
+            Log.w(TAG, "pack.packageName =  " + pack.packageName);
+            if (providers != null) {
+                for (ProviderInfo provider : providers) {
+                    Log.w("Example", "provider: " + provider.authority);
+                }
+            }
+        }
+
         mRefreshLayout.setOnRefreshListener(this);
         mListView = findViewById(R.id.recycler_view);
         mListView.setLayoutManager(new LinearLayoutManager(this));
@@ -127,6 +138,9 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
                 if (!isOpen) {
                     Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
 //                    intent.setFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
+                    int flag = Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION | Intent.FLAG_ACTIVITY_CLEAR_TOP | 0x00800000;
+                    Log.d(TAG,"flag = "+flag);
+                    intent.setFlags(flag);
                     startActivity(intent);
                     String appname = getResources().getString(R.string.app_name);
                     String toastString = getResources().getString(R.string.accessibility_to_open_permission, appname);
@@ -137,11 +151,11 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
                         @Override
                         public void run() {
                             Intent intent1 = new Intent(MainActivity.this, GuideDialogActivity.class);
-//                            intent1.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            intent1.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                             startActivity(intent1);
                             overridePendingTransition(R.anim.c, R.anim.d);
                         }
-                    }, 1000);
+                    }, 2000);
 
 
                 } else {
@@ -526,7 +540,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
                         public void run() {
                             Intent intent1 = new Intent(MainActivity.this, clazz);
                             if (isClearTop) {
-                                intent1.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP );
+                                intent1.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                             }
                             startActivity(intent1);
                         }

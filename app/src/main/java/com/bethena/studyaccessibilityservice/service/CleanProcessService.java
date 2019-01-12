@@ -156,6 +156,10 @@ public class CleanProcessService extends BaseAccessibilityService {
         Log.d(TAG, "event.getPackageName----" + event.getPackageName());
         Log.d(TAG, "event.getClassName----" + event.getClassName());
 
+        if("com.vivo.permissionmanager".equals(event.getPackageName())){
+
+        }
+
 
         if (isStartClean && !isToCancel) {
             UserTrajectory trajectory = new UserTrajectory(event.getPackageName().toString(), event.getClass().toString());
