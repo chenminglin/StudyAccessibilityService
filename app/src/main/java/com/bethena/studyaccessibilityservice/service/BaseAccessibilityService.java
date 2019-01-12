@@ -161,6 +161,7 @@ public class BaseAccessibilityService extends AccessibilityService {
      * @param text text
      * @return View
      */
+    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
     public AccessibilityNodeInfo findViewByTextFromNode(String text, AccessibilityNodeInfo rootNodeInfo) {
         AccessibilityNodeInfo accessibilityNodeInfo = rootNodeInfo;
         if (accessibilityNodeInfo == null) {
