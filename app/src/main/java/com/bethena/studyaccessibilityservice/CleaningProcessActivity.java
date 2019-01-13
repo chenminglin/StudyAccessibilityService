@@ -130,8 +130,7 @@ public class CleaningProcessActivity extends AppCompatActivity {
             }
 
 
-            int flag = Intent.FLAG_ACTIVITY_NO_ANIMATION
-                    | Intent.FLAG_RECEIVER_REPLACE_PENDING | Intent.FLAG_ACTIVITY_CLEAR_TOP;
+            int flag = Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION | Intent.FLAG_ACTIVITY_NO_HISTORY;
 
             int flagLieBao = Intent.FLAG_RECEIVER_FOREGROUND | Intent.FLAG_ACTIVITY_CLEAR_TASK;
 

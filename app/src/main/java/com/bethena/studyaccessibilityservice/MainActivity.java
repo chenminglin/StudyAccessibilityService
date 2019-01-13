@@ -1,7 +1,6 @@
 package com.bethena.studyaccessibilityservice;
 
 import android.content.BroadcastReceiver;
-import android.content.ContentProvider;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -33,7 +32,6 @@ import com.bethena.studyaccessibilityservice.permission.autostart.AutoStartPermi
 import com.bethena.studyaccessibilityservice.service.CleanProcessService;
 import com.bethena.studyaccessibilityservice.service.MyIntentService;
 import com.bethena.studyaccessibilityservice.utils.AppUtil;
-import com.bethena.studyaccessibilityservice.utils.CleanFloatPermissionUtil;
 import com.bethena.studyaccessibilityservice.utils.SharedPreferencesUtil;
 import com.chad.library.adapter.base.BaseQuickAdapter;
 import com.yqritc.recyclerviewflexibledivider.HorizontalDividerItemDecoration;
@@ -43,7 +41,6 @@ import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
 import java.io.File;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -54,27 +51,20 @@ import static com.bethena.studyaccessibilityservice.Constants.KEY_PARAM1;
 public class MainActivity extends AppCompatActivity implements SwipeRefreshLayout.OnRefreshListener {
 
     final String TAG = getClass().getSimpleName();
-
+    final int EVER_TREATH_HANDLE_APP_NUM = 10;
     PackageManager pm;
-
     RecyclerView mListView;
-
     SwipeRefreshLayout mRefreshLayout;
     AppAdapter mAdapter;
-
     List<ProcessInfo> mDatas = new ArrayList<>();
-
     ArrayList<ProcessTransInfo> mAppPkgs = new ArrayList<>();
-
     ArrayList<String> ignoreAppPackage = new ArrayList<>();
-
     ArrayList<UserTrajectory> trajectories = new ArrayList<>();
-
     AccessibilityBroadcastReceiver mReceiver;
-
     SeekBar seekBar;
-
     MainBroadcastReceiver mMainReceiver;
+    int threadCount = 0;
+    volatile int threadFinishCount = 0;
 
     void initIgnore() {
 //        ignoreAppPackage.add("com.oasisfeng.greenify");
@@ -104,7 +94,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         for (PackageInfo pack : getPackageManager().getInstalledPackages(PackageManager.GET_PROVIDERS)) {
             ProviderInfo[] providers = pack.providers;
             Log.w(TAG, "pack.packageName =  " + pack.packageName);
-            if("com.vivo.browser".equals(pack.packageName)){
+            if ("com.vivo.browser".equals(pack.packageName)) {
                 if (providers != null) {
                     for (ProviderInfo provider : providers) {
                         Log.w("Example", "provider: " + provider.authority);
@@ -154,16 +144,12 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
                     Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
 //                    intent.setFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
                     int flag = Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION | Intent.FLAG_ACTIVITY_CLEAR_TOP | 0x00800000;
-                    Log.d(TAG,"flag = "+flag);
+                    Log.d(TAG, "flag = " + flag);
                     intent.setFlags(flag);
                     startActivity(intent);
                     String appname = getResources().getString(R.string.app_name);
                     String toastString = getResources().getString(R.string.accessibility_to_open_permission, appname);
                     Toast.makeText(getApplicationContext(), toastString, Toast.LENGTH_LONG).show();
-
-
-
-
 
 
                 } else {
@@ -219,7 +205,6 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         initReceiver();
     }
 
-
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onEvent(UserTrajectory trajectory) {
         trajectories.add(trajectory);
@@ -236,12 +221,8 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         mMainReceiver = new MainBroadcastReceiver();
         IntentFilter intentFilter1 = new IntentFilter();
         intentFilter.addAction("vivo.intent.action.CHECK_ALERT_WINDOW");
-        registerReceiver(mMainReceiver,intentFilter1);
+        registerReceiver(mMainReceiver, intentFilter1);
     }
-
-    int threadCount = 0;
-    final int EVER_TREATH_HANDLE_APP_NUM = 10;
-    volatile int threadFinishCount = 0;
 
     private void initData() {
         mRefreshLayout.setRefreshing(true);
@@ -386,11 +367,6 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
 
     }
 
-    class AThread extends Thread {
-
-    }
-
-
     @Override
     protected void onResume() {
         super.onResume();
@@ -407,7 +383,6 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     public void onRefresh() {
         initData();
     }
-
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -462,6 +437,103 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         unregisterReceiver(mMainReceiver);
     }
 
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        Log.d(TAG, "onNewIntent");
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        Log.d(TAG, "onStart");
+    }
+
+    public void clickButtonFloat(View view) {
+//        (new CleanFloatPermissionUtil()).jump2System(this, AppUtil.getAndroidDeviceProduct());
+//        requestSettingCanDrawOverlays();
+
+        boolean checkPermission = FloatWindowManager.getInstance().checkPermission(this);
+
+//        if (!checkPermission) {
+        FloatWindowManager.getInstance().applyPermission(this);
+        Intent intentService = new Intent(MainActivity.this, MyIntentService.class);
+        intentService.setAction(MyIntentService.ACTION);
+        startService(intentService);
+//        } else {
+//
+//        }
+
+
+    }
+
+    public void clickButtonSelfReset(View view) {
+        if (AutoStartPermissionUtils.isEnablePermissioActivity(this)) {
+            AutoStartPermissionUtils.openPermissionActivity(this);
+        }
+    }
+
+    public void mytest(View view) {
+        int n = 0;
+        int flag = Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION | Intent.FLAG_ACTIVITY_NO_HISTORY;
+        for (; n < mDatas.size(); n++) {
+            startDtailSettingActivity(mDatas.get(n).packageName, 1000 * n, flag);
+        }
+
+        startDelayActivity(MainActivity.class, n * 1000, flag);
+
+    }
+
+    private void startDtailSettingActivity(final String packageName, final long delayTime, final int flags) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Thread.sleep(delayTime);
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Log.d(TAG, "aaaa packagename" + packageName);
+                            Intent intentSetting = new Intent();
+                            intentSetting.setAction(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                            Uri uri = Uri.fromParts("package", packageName, null);
+                            intentSetting.setFlags(flags);
+                            intentSetting.setData(uri);
+                            startActivity(intentSetting);
+                        }
+                    });
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+    }
+
+    private void startDelayActivity(final Class clazz, final long delayTime, final int flags) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Thread.sleep(delayTime);
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Log.d(TAG, "aaaa class" + clazz);
+                            Intent intent = new Intent(MainActivity.this, clazz);
+                            intent.setFlags(flags);
+                            startActivity(intent);
+                        }
+                    });
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+    }
+
+    class AThread extends Thread {
+
+    }
 
     public class AccessibilityBroadcastReceiver extends BroadcastReceiver {
 
@@ -481,101 +553,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         }
     }
 
-    @Override
-    protected void onNewIntent(Intent intent) {
-        super.onNewIntent(intent);
-        Log.d(TAG, "onNewIntent");
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-        Log.d(TAG, "onStart");
-    }
-
-
-    public void clickButtonFloat(View view) {
-//        (new CleanFloatPermissionUtil()).jump2System(this, AppUtil.getAndroidDeviceProduct());
-//        requestSettingCanDrawOverlays();
-
-        boolean checkPermission = FloatWindowManager.getInstance().checkPermission(this);
-
-//        if (!checkPermission) {
-            FloatWindowManager.getInstance().applyPermission(this);
-            Intent intentService = new Intent(MainActivity.this,MyIntentService.class);
-            intentService.setAction(MyIntentService.ACTION);
-            startService(intentService);
-//        } else {
-//
-//        }
-
-
-    }
-
-    public void clickButtonSelfReset(View view) {
-        if (AutoStartPermissionUtils.isEnablePermissioActivity(this)) {
-            AutoStartPermissionUtils.openPermissionActivity(this);
-        }
-    }
-
-    public void mytest(View view) {
-        startDelayActivity(UserTrajectoryActivity.class, 0, false);
-
-        startDelayActivity(ScrollingActivity.class, 1000, false);
-
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    Thread.sleep(2000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-
-                        Intent intent = new Intent();
-                        intent.setAction(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-                        Uri uri = Uri.fromParts("package", getPackageName(), null);
-                        int flag = Intent.FLAG_ACTIVITY_NO_ANIMATION
-                                | Intent.FLAG_RECEIVER_REPLACE_PENDING;
-                        intent.addFlags(flag);
-                        intent.setData(uri);
-                        startActivity(intent);
-                    }
-                });
-            }
-        }).start();
-
-        startDelayActivity(UserTrajectoryActivity.class, 3000, true);
-    }
-
-    private void startDelayActivity(final Class clazz, final long delayTime, final boolean isClearTop) {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    Thread.sleep(delayTime);
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            Intent intent1 = new Intent(MainActivity.this, clazz);
-                            if (isClearTop) {
-                                intent1.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                            }
-                            startActivity(intent1);
-                        }
-                    });
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        }).start();
-    }
-
-
-    class MainBroadcastReceiver extends BroadcastReceiver{
+    class MainBroadcastReceiver extends BroadcastReceiver {
 
         @Override
         public void onReceive(Context context, Intent intent) {
