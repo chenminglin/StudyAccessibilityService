@@ -104,6 +104,9 @@ public class CleaningProcessActivity extends AppCompatActivity {
         if (mAppPkgs.size() > 0) {
             ProcessTransInfo transInfo = mAppPkgs.get(0);
 
+            if (mAppPkgs.size() == 1) {
+                transInfo.isLastOne = true;
+            }
 
             Intent intentService = new Intent(Constants.ACTION_TO_ACC_DOIT);
             intentService.putExtra(KEY_PARAM1, mAppPkgs.get(0));
@@ -128,7 +131,7 @@ public class CleaningProcessActivity extends AppCompatActivity {
 
 
             int flag = Intent.FLAG_ACTIVITY_NO_ANIMATION
-                    | Intent.FLAG_RECEIVER_REPLACE_PENDING;
+                    | Intent.FLAG_RECEIVER_REPLACE_PENDING | Intent.FLAG_ACTIVITY_CLEAR_TOP;
 
             int flagLieBao = Intent.FLAG_RECEIVER_FOREGROUND | Intent.FLAG_ACTIVITY_CLEAR_TASK;
 
@@ -238,6 +241,8 @@ public class CleaningProcessActivity extends AppCompatActivity {
             isServiceStart = false;
 
             finish();
+
+            startActivity(new Intent(CleaningProcessActivity.this, MainActivity.class));
         }
     }
 
@@ -305,6 +310,9 @@ public class CleaningProcessActivity extends AppCompatActivity {
                 case Constants.ACTION_RECEIVER_ACC_PROCESS_HAVE_FINISH:
                     String packageName2 = intent.getStringExtra(KEY_PARAM1);
                     removePkgAndStartNext(packageName2);
+                    break;
+                case Constants.ACTION_RECEIVER_ACC_CLEAN_LAST_ONE:
+                    startActivity(new Intent(CleaningProcessActivity.this, MainActivity.class));
                     break;
             }
 

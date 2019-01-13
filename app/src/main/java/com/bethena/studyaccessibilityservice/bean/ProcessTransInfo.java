@@ -14,6 +14,7 @@ public class ProcessTransInfo implements Parcelable {
     public PackageInfo packageInfo;
 
     public boolean isCleaned;
+    public boolean isLastOne;
 
     //发生意外的类型
     public int cleanAccidentType;

@@ -1,6 +1,5 @@
 package com.bethena.studyaccessibilityservice.service;
 
-import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -15,6 +14,7 @@ import com.bethena.studyaccessibilityservice.Constants;
 import com.bethena.studyaccessibilityservice.R;
 import com.bethena.studyaccessibilityservice.bean.ProcessTransInfo;
 import com.bethena.studyaccessibilityservice.bean.UserTrajectory;
+import com.bethena.studyaccessibilityservice.permission.rom.RomUtils;
 
 import java.util.ArrayList;
 
@@ -47,6 +47,8 @@ public class CleanProcessService extends BaseAccessibilityService {
     ToAccessibilityBroadcastReceiver mReceiver;
 
     String appName;
+
+    boolean isVivoSystem = RomUtils.checkIsVivoRom();
 
 
     @Override
@@ -81,10 +83,6 @@ public class CleanProcessService extends BaseAccessibilityService {
             performBackClick();
 
         }
-
-
-
-
 
 
     }
@@ -164,7 +162,7 @@ public class CleanProcessService extends BaseAccessibilityService {
         Log.d(TAG, "event.getPackageName----" + event.getPackageName());
         Log.d(TAG, "event.getClassName----" + event.getClassName());
 
-        if("com.vivo.permissionmanager".equals(event.getPackageName())){
+        if ("com.vivo.permissionmanager".equals(event.getPackageName())) {
 
         }
 
@@ -191,7 +189,7 @@ public class CleanProcessService extends BaseAccessibilityService {
                 Log.d(TAG, "getRecordCount = " + event.getRecordCount());
 
                 if (appSettingViews.contains(className)) {
-                    if(Build.VERSION.SDK_INT >= 18){
+                    if (Build.VERSION.SDK_INT >= 18) {
                         printAllNode(getRootInActiveWindow());
                     }
 
@@ -225,37 +223,36 @@ public class CleanProcessService extends BaseAccessibilityService {
                     }
 
                     if (mCurrentAppPkg != null && mCurrentAppPkg.isCleaned) {
-                        performBackClick();
-                        Intent intent = new Intent(Constants.ACTION_RECEIVER_ACC_CLEAN_ONE);
-                        String packageName = mCurrentAppPkg.packageName;
-                        intent.putExtra(Constants.KEY_PARAM1, packageName);
-                        sendBroadcast(intent);
-                        Log.d(TAG,"取消退出");
-
+                        if (isVivoSystem) {
+                            performBackClick();
+                            Intent intent = new Intent(Constants.ACTION_RECEIVER_ACC_CLEAN_ONE);
+                            String packageName = mCurrentAppPkg.packageName;
+                            intent.putExtra(Constants.KEY_PARAM1, packageName);
+                            sendBroadcast(intent);
+                            Log.d(TAG, "取消退出");
+                        }
                     } else if (mCurrentAppPkg != null
                             && mCurrentAppPkg.cleanAccidentType == ProcessTransInfo.CLEAN_ACCIDENT_TYPE_CLEAN_VIEW_NOT_FOUND) {//应用详情页找不到
                         performBackClick();
                         isStartClean = false;
                         sendBroadcast(new Intent(Constants.ACTION_RECEIVER_ACC_CLEAN_VIEW_NOT_FOUND));
-                        Log.d(TAG,"应用详情页找不到 退出");
-                    }
-                    else if (mCurrentAppPkg != null
+                        Log.d(TAG, "应用详情页找不到 退出");
+                    } else if (mCurrentAppPkg != null
                             && mCurrentAppPkg.cleanAccidentType == ProcessTransInfo.CLEAN_ACCIDENT_TYPE_CLEAN_BUTTON_NOT_FOUND) {//按钮无法找到
 
                         performBackClick();
                         isStartClean = false;
                         sendBroadcast(new Intent(Constants.ACTION_RECEIVER_ACC_CLEAN_BUTTON_NOT_FOUND));
 
-                        Log.d(TAG,"按钮无法找到 退出");
-                    }
-                    else if (isToCancel) {
+                        Log.d(TAG, "按钮无法找到 退出");
+                    } else if (isToCancel) {
                         Log.d(TAG, "取消1");
                         performBackClick();
                         isStartClean = true;
                     } else if (info != null) {
                         if (info.isEnabled()) {
                             performViewClick(info);
-                            Log.d(TAG,"点击 停止");
+                            Log.d(TAG, "点击 停止");
                         } else {//进程已经结束
                             Log.d(TAG, "进程已经结束1");
                             performBackClick();
@@ -276,7 +273,7 @@ public class CleanProcessService extends BaseAccessibilityService {
                         if (info != null) {
                             if (info.isEnabled()) {
                                 performViewClick(info);
-                                Log.d(TAG,"点击 停止2");
+                                Log.d(TAG, "点击 停止2");
                             } else {//进程已经结束
                                 Log.d(TAG, "进程已经结束2");
                                 performBackClick();
@@ -316,6 +313,22 @@ public class CleanProcessService extends BaseAccessibilityService {
                     } else if (info != null) {
                         performViewClick(info);
                         mCurrentAppPkg.isCleaned = true;
+                        if (!isVivoSystem) {
+                            Log.d(TAG, "是否是最后一个 " + mCurrentAppPkg.isLastOne);
+                            if (!mCurrentAppPkg.isLastOne) {
+                                Intent intent = new Intent(Constants.ACTION_RECEIVER_ACC_CLEAN_ONE);
+                                String packageName = mCurrentAppPkg.packageName;
+                                intent.putExtra(Constants.KEY_PARAM1, packageName);
+                                sendBroadcast(intent);
+                            } else {
+                                Intent intent = new Intent(Constants.ACTION_RECEIVER_ACC_CLEAN_LAST_ONE);
+                                String packageName = mCurrentAppPkg.packageName;
+                                intent.putExtra(Constants.KEY_PARAM1, packageName);
+                                sendBroadcast(intent);
+                                isStartClean = false;
+                            }
+
+                        }
                     } else {
                         Log.e(TAG, "找不到 弹出窗的 '停止' 按钮");
                         performBackClick();
@@ -365,8 +378,12 @@ public class CleanProcessService extends BaseAccessibilityService {
                 case Constants.ACTION_TO_ACC_DOIT:
                     mCurrentAppPkg = intent.getParcelableExtra(Constants.KEY_PARAM1);
                     Log.d(TAG, "onReceive mCurrentAppPkg = " + mCurrentAppPkg);
-                    isStartClean = intent.getBooleanExtra(Constants.KEY_PARAM2, false);
-                    isToCancel = false;
+                    if(mCurrentAppPkg!=null){
+                        isStartClean = intent.getBooleanExtra(Constants.KEY_PARAM2, false);
+                        isToCancel = false;
+                    }else{
+                        isStartClean = false;
+                    }
                     break;
                 case Constants.ACTION_TO_CANCEL_SERVICE:
                     isToCancel = true;

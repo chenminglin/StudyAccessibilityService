@@ -303,9 +303,9 @@ public class BaseAccessibilityService extends AccessibilityService {
             return;
         }
 
-        Log.w(TAG, "printAllNode ===  text = " + nodeInfo.getText()
-                + ", descript = " + nodeInfo.getContentDescription()
-                + ", className = " + nodeInfo.getClassName() + ", resId = " + nodeInfo.getViewIdResourceName());
+//        Log.w(TAG, "printAllNode ===  text = " + nodeInfo.getText()
+//                + ", descript = " + nodeInfo.getContentDescription()
+//                + ", className = " + nodeInfo.getClassName() + ", resId = " + nodeInfo.getViewIdResourceName());
 
         int childCount = nodeInfo.getChildCount();
         if (childCount > 0) {
