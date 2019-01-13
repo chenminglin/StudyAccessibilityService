@@ -1,6 +1,7 @@
 package com.bethena.studyaccessibilityservice;
 
 import android.content.BroadcastReceiver;
+import android.content.ContentProvider;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -30,7 +31,9 @@ import com.bethena.studyaccessibilityservice.bean.UserTrajectory;
 import com.bethena.studyaccessibilityservice.permission.FloatWindowManager;
 import com.bethena.studyaccessibilityservice.permission.autostart.AutoStartPermissionUtils;
 import com.bethena.studyaccessibilityservice.service.CleanProcessService;
+import com.bethena.studyaccessibilityservice.service.MyIntentService;
 import com.bethena.studyaccessibilityservice.utils.AppUtil;
+import com.bethena.studyaccessibilityservice.utils.CleanFloatPermissionUtil;
 import com.bethena.studyaccessibilityservice.utils.SharedPreferencesUtil;
 import com.chad.library.adapter.base.BaseQuickAdapter;
 import com.yqritc.recyclerviewflexibledivider.HorizontalDividerItemDecoration;
@@ -71,6 +74,8 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
 
     SeekBar seekBar;
 
+    MainBroadcastReceiver mMainReceiver;
+
     void initIgnore() {
 //        ignoreAppPackage.add("com.oasisfeng.greenify");
 //        ignoreAppPackage.add("me.piebridge.brevent");
@@ -84,9 +89,9 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-
         initIgnore();
+
+
         setContentView(R.layout.activity_main);
 
         Toolbar toolbar = findViewById(R.id.toolbar);
@@ -99,12 +104,18 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         for (PackageInfo pack : getPackageManager().getInstalledPackages(PackageManager.GET_PROVIDERS)) {
             ProviderInfo[] providers = pack.providers;
             Log.w(TAG, "pack.packageName =  " + pack.packageName);
-            if (providers != null) {
-                for (ProviderInfo provider : providers) {
-                    Log.w("Example", "provider: " + provider.authority);
+            if("com.vivo.browser".equals(pack.packageName)){
+                if (providers != null) {
+                    for (ProviderInfo provider : providers) {
+                        Log.w("Example", "provider: " + provider.authority);
+
+
+                    }
                 }
             }
+
         }
+
 
         mRefreshLayout.setOnRefreshListener(this);
         mListView = findViewById(R.id.recycler_view);
@@ -139,6 +150,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
                 boolean isOpen = AppUtil.isAccessibilitySettingsOn(getApplicationContext(), CleanProcessService.class);
 
                 if (!isOpen) {
+
                     Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
 //                    intent.setFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
                     int flag = Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION | Intent.FLAG_ACTIVITY_CLEAR_TOP | 0x00800000;
@@ -150,15 +162,8 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
                     Toast.makeText(getApplicationContext(), toastString, Toast.LENGTH_LONG).show();
 
 
-                    getWindow().getDecorView().postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            Intent intent1 = new Intent(MainActivity.this, GuideDialogActivity.class);
-                            intent1.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                            startActivity(intent1);
-                            overridePendingTransition(R.anim.c, R.anim.d);
-                        }
-                    }, 2000);
+
+
 
 
                 } else {
@@ -226,6 +231,12 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         intentFilter.addAction(Constants.ACTION_RECEIVER_ACC_RECORD_ACTIVITY);
         intentFilter.addAction(Constants.ACTION_RECEIVER_ACC_FINISH);
         registerReceiver(mReceiver, intentFilter);
+
+
+        mMainReceiver = new MainBroadcastReceiver();
+        IntentFilter intentFilter1 = new IntentFilter();
+        intentFilter.addAction("vivo.intent.action.CHECK_ALERT_WINDOW");
+        registerReceiver(mMainReceiver,intentFilter1);
     }
 
     int threadCount = 0;
@@ -447,6 +458,8 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         unregisterReceiver(mReceiver);
 
         Log.d(TAG, "onDestroy");
+
+        unregisterReceiver(mMainReceiver);
     }
 
 
@@ -482,16 +495,21 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
 
 
     public void clickButtonFloat(View view) {
-//        CleanFloatPermissionUtil.jump2System(this, AppUtil.getPhoneModel());
+//        (new CleanFloatPermissionUtil()).jump2System(this, AppUtil.getAndroidDeviceProduct());
 //        requestSettingCanDrawOverlays();
 
         boolean checkPermission = FloatWindowManager.getInstance().checkPermission(this);
 
-        if (!checkPermission) {
+//        if (!checkPermission) {
             FloatWindowManager.getInstance().applyPermission(this);
-        } else {
+            Intent intentService = new Intent(MainActivity.this,MyIntentService.class);
+            intentService.setAction(MyIntentService.ACTION);
+            startService(intentService);
+//        } else {
+//
+//        }
 
-        }
+
     }
 
     public void clickButtonSelfReset(View view) {
@@ -554,5 +572,15 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
                 }
             }
         }).start();
+    }
+
+
+    class MainBroadcastReceiver extends BroadcastReceiver{
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+//            Log.d(TAG,"action : "+intent.getAction());
+
+        }
     }
 }

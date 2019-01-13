@@ -149,7 +149,7 @@ public class CleanProcessService extends BaseAccessibilityService {
 
         AccessibilityNodeInfo source = event.getSource();
 
-        overridePendingTransition(0,0);
+//        overridePendingTransition(0,0);
 
 
         if (source != null) {
