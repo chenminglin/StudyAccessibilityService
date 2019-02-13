@@ -1,5 +1,5 @@
 apply plugin: 'com.android.application'
-
+String SDK_DIR = System.getenv("ANDROID_SDK_HOME")
 android {
     compileSdkVersion 28
     defaultConfig {
@@ -20,6 +20,16 @@ android {
     lintOptions {
         abortOnError false
     }
+
+    //以下是为了找到android.os.SystemProperties这个隐藏的类
+
+    //("TAG", "SDK_DIR = " + SDK_DIR );
+    if(SDK_DIR == null) {
+        Properties props = new Properties()
+        props.load(new FileInputStream(project.rootProject.file("local.properties")))
+        SDK_DIR = props.get('sdk.dir');
+    }
+
 }
 
 dependencies {
@@ -42,4 +52,6 @@ dependencies {
     implementation 'com.github.czy1121:settingscompat:1.1.4'
 
     implementation 'io.reactivex.rxjava2:rxjava:2.+'
+
+    compileOnly files("${SDK_DIR}/platforms/android-21/data/layoutlib.jar")
 }

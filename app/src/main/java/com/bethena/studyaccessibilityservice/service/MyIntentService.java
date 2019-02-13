@@ -6,15 +6,19 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.graphics.PixelFormat;
+import android.net.Uri;
 import android.os.Binder;
 import android.os.SystemClock;
+import android.provider.Settings;
 import android.support.annotation.Nullable;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.view.WindowManager;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 
@@ -106,9 +110,7 @@ public class MyIntentService extends IntentService {
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT) {
 //                    AppOpsManager mOpsManager = (AppOpsManager) getSystemService(Context.APP_OPS_SERVICE);
 //                    int allowShowMode = mOpsManager.checkOp("checkOp", uid, getPackageName());
-
-
-
+//                    Log.d(TAG, "allowShowMode = " + allowShowMode);
 
                     AppOpsManager manager = (AppOpsManager) getSystemService(Context.APP_OPS_SERVICE);
                     try {
@@ -119,10 +121,52 @@ public class MyIntentService extends IntentService {
                     } catch (Exception e) {
                         Log.e(TAG, Log.getStackTraceString(e));
                     }
-//                    Log.d(TAG, "allowShowMode = " + allowShowMode);
+
+
+
+//                    Uri uri = Uri.parse("content://com.iqoo.secure.provider.secureprovider/allowfloatwindowapp");
+//                    Cursor cursor = getContentResolver().query(uri, null, null, null, null);
+//                    if (cursor != null) {
+//                        while (cursor.moveToNext()) {
+//                            String[] names = cursor.getColumnNames();
+//
+//                            StringBuffer stringBuffer = new StringBuffer();
+//                            for (String name : names) {
+//                                String value = cursor.getString(cursor.getColumnIndex(name));
+//                                stringBuffer.append(name + ":" + value + ",");
+//
+//                            }
+//                        }
+//                    } else {
+//                        Log.d(TAG, "cursor is null");
+//                    }
+
+
+//
+//
+//                    Log.d(TAG,stringBuffer.toString());
+
+
                 }
 
+//                Class clazz = Settings.class;
+//                Method canDrawOverlays = null;
+//                try {
+//                    canDrawOverlays = clazz.getDeclaredMethod("canDrawOverlays", Context.class);
+//                    boolean result = (Boolean) canDrawOverlays.invoke(null, MyIntentService.this);
+//                    Log.d(TAG, "result = " + result);
+//                } catch (NoSuchMethodException e) {
+//                    e.printStackTrace();
+//                } catch (IllegalAccessException e) {
+//                    e.printStackTrace();
+//                } catch (InvocationTargetException e) {
+//                    e.printStackTrace();
+//                }
+
+
             }
+
+//            }
 
 
         }

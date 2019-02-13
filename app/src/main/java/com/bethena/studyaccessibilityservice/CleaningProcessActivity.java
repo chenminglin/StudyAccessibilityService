@@ -23,6 +23,7 @@ import android.widget.Toast;
 
 import com.bethena.studyaccessibilityservice.bean.ProcessTransInfo;
 import com.bethena.studyaccessibilityservice.permission.FloatWindowManager;
+import com.bethena.studyaccessibilityservice.service.CleaningProcessWindowService;
 import com.bethena.studyaccessibilityservice.ui.CleaningProcessView;
 import com.bethena.studyaccessibilityservice.utils.SharedPreferencesUtil;
 
@@ -38,21 +39,20 @@ public class CleaningProcessActivity extends AppCompatActivity {
 
     CleaningProcessActivity.AccessibilityBroadcastReceiver mReceiver;
 
-    CleaningProcessView mCleaningWindow;
-
     ArrayList<ProcessTransInfo> mAppPkgs = new ArrayList<>();
 
     boolean isServiceStart;
 
-    WindowManager windowManager;
     PackageManager pm;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_transparent);
-        getWindow().getDecorView().setBackgroundResource(android.R.color.transparent);
         pm = getPackageManager();
+        getWindow().getDecorView().setBackgroundResource(android.R.color.transparent);
+
         initReceiver();
         if (getIntent().getExtras() != null) {
             mAppPkgs = getIntent().getParcelableArrayListExtra(Constants.KEY_PARAM1);
@@ -60,13 +60,22 @@ public class CleaningProcessActivity extends AppCompatActivity {
             startNextAppSetting(true);
         }
 
+//        startService(new Intent(this, CleaningProcessWindowService.class));
+
 
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        Log.d(TAG, "onDestroy");
         unregisterReceiver(mReceiver);
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        Log.d(TAG, "onNewIntent");
     }
 
     private void initReceiver() {
@@ -130,7 +139,7 @@ public class CleaningProcessActivity extends AppCompatActivity {
             }
 
 
-            int flag = Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION | Intent.FLAG_ACTIVITY_NO_HISTORY;
+            int flag = Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION | Intent.FLAG_ACTIVITY_NO_HISTORY;
 
             int flagLieBao = Intent.FLAG_RECEIVER_FOREGROUND | Intent.FLAG_ACTIVITY_CLEAR_TASK;
 
@@ -145,83 +154,6 @@ public class CleaningProcessActivity extends AppCompatActivity {
 //            startActivity(intentActivity);
 
 
-            if (FloatWindowManager.getInstance().checkPermission(this)) {
-                if (windowManager == null) {
-                    windowManager = (WindowManager) getApplicationContext().getSystemService(Application.WINDOW_SERVICE);
-                }
-
-                if (mCleaningWindow == null) {
-                    View cleaningLayout = LayoutInflater.from(this).inflate(R.layout.activity_cleaning_process, null);
-                    mCleaningWindow = new CleaningProcessView();
-                    mCleaningWindow.vRootView = cleaningLayout;
-                    mCleaningWindow.tvAppName = cleaningLayout.findViewById(R.id.tv_appname);
-                    mCleaningWindow.iVIconView = cleaningLayout.findViewById(R.id.iv_app_icon);
-                    mCleaningWindow.btnCancel = cleaningLayout.findViewById(R.id.btn_cancel);
-                    mCleaningWindow.mWindowManager = windowManager;
-
-                    mCleaningWindow.btnCancel.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            mCleaningWindow.btnCancel.setClickable(false);
-                            Log.d(TAG, "service cancel ");
-                            try {
-                                Thread.sleep(500);
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
-                            dismissFloatWindow();
-
-                            isServiceStart = false;
-                            sendBroadcast(new Intent(Constants.ACTION_TO_CANCEL_SERVICE));
-                            finish();
-                        }
-                    });
-
-                    Point size = new Point();
-                    windowManager.getDefaultDisplay().getSize(size);
-                    int screenWidth = size.x;
-                    int screenHeight = size.y;
-
-                    WindowManager.LayoutParams layoutParams = new WindowManager.LayoutParams();
-
-                    layoutParams.packageName = getPackageName();
-                    layoutParams.width = WindowManager.LayoutParams.WRAP_CONTENT;
-                    layoutParams.height = WindowManager.LayoutParams.WRAP_CONTENT;
-                    layoutParams.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
-                            | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_LAYOUT_INSET_DECOR
-                            | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN;
-
-
-                    int type = 0;
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        type = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
-                    } else {
-                        type = WindowManager.LayoutParams.TYPE_SYSTEM_ERROR;
-                    }
-
-                    layoutParams.type = type;
-
-                    layoutParams.format = PixelFormat.RGBA_8888;
-                    layoutParams.width = WindowManager.LayoutParams.MATCH_PARENT;
-                    layoutParams.height = WindowManager.LayoutParams.MATCH_PARENT;
-
-                    layoutParams.x = screenWidth;
-                    layoutParams.y = screenHeight;
-
-                    mCleaningWindow.layoutParams = layoutParams;
-                }
-
-//                if (mCleaningWindow != null && !mCleaningWindow.isShowing) {
-//                    mCleaningWindow.btnCancel.setClickable(true);
-//                    windowManager.addView(mCleaningWindow.vRootView, mCleaningWindow.layoutParams);
-//                    mCleaningWindow.isShowing = true;
-//                }
-
-                Drawable icon = transInfo.packageInfo.applicationInfo.loadIcon(pm);
-                mCleaningWindow.iVIconView.setImageDrawable(icon);
-                mCleaningWindow.tvAppName.setText(transInfo.packageInfo.applicationInfo.loadLabel(pm));
-            }
-
         } else {
 
 //            Intent intentService = new Intent(MainActivity.this, CleanProcessService.class);
@@ -232,24 +164,20 @@ public class CleaningProcessActivity extends AppCompatActivity {
             intentService.putExtra(Constants.KEY_PARAM2, false);
             sendBroadcast(intentService);
 
-            dismissFloatWindow();
+//            dismissFloatWindow();
             SharedPreferencesUtil.putBoolean(Constants.KEY_IS_START_CLEAN, false);
 
             Intent intentFinish = new Intent(Constants.ACTION_RECEIVER_ACC_FINISH);
             sendBroadcast(intentFinish);
             isServiceStart = false;
 
-            finish();
 
-            startActivity(new Intent(CleaningProcessActivity.this, MainActivity.class));
+            Intent intent = new Intent(CleaningProcessActivity.this, Main2Activity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT | Intent.FLAG_ACTIVITY_NO_ANIMATION);
+            startActivity(intent);
         }
     }
 
-    public void dismissFloatWindow() {
-        if (mCleaningWindow != null && mCleaningWindow.isShowing) {
-            mCleaningWindow.dismissWindow();
-        }
-    }
 
     private void removePkgAndStartNext(String packageName) {
         Log.d("AccessibilityReceiver", "-------------packageName = " + packageName);
@@ -275,29 +203,29 @@ public class CleaningProcessActivity extends AppCompatActivity {
             Log.d("AccessibilityReceiver", "-------------" + intent.getAction());
             switch (intent.getAction()) {
                 case Constants.ACTION_RECEIVER_ACC_FINISH:
-                    finish();
+//                    finish();
                     break;
                 case Constants.ACTION_RECEIVER_ACC_CLEAN_ONE:
                     String packageName = intent.getStringExtra(KEY_PARAM1);
                     removePkgAndStartNext(packageName);
                     break;
                 case Constants.ACTION_RECEIVER_ACC_CLEAN_ERROR:
-                    dismissFloatWindow();
+//                    dismissFloatWindow();
                     Toast.makeText(context, R.string.accessibility_error, Toast.LENGTH_LONG).show();
-                    finish();
+//                    finish();
                     break;
                 case Constants.ACTION_RECEIVER_ACC_CLEAN_BUTTON_NOT_FOUND:
-                    dismissFloatWindow();
+//                    dismissFloatWindow();
                     Toast.makeText(context, R.string.accessibility_button_not_fount, Toast.LENGTH_LONG).show();
-                    finish();
+//                    finish();
                     break;
                 case Constants.ACTION_RECEIVER_ACC_CLEAN_VIEW_NOT_FOUND:
-                    dismissFloatWindow();
+//                    dismissFloatWindow();
                     Toast.makeText(context, R.string.accessibility_view_not_fount, Toast.LENGTH_LONG).show();
-                    finish();
+//                    finish();
                     break;
                 case Constants.ACTION_RECEIVER_ACC_CLEAN_INTERCEPTER:
-                    dismissFloatWindow();
+//                    dismissFloatWindow();
                     startNextAppSetting(true);
 //                    finish();
 //                    Toast.makeText(context, R.string.accessibility_intercepter, Toast.LENGTH_LONG).show();

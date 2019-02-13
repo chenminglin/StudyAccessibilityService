@@ -7,13 +7,12 @@ import android.content.IntentFilter;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.content.pm.ProviderInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -21,20 +20,19 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.SeekBar;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bethena.studyaccessibilityservice.bean.ProcessInfo;
 import com.bethena.studyaccessibilityservice.bean.ProcessTransInfo;
 import com.bethena.studyaccessibilityservice.bean.UserTrajectory;
 import com.bethena.studyaccessibilityservice.permission.FloatWindowManager;
+import com.bethena.studyaccessibilityservice.permission.VivoFloatPermissionStatus;
 import com.bethena.studyaccessibilityservice.permission.autostart.AutoStartPermissionUtils;
 import com.bethena.studyaccessibilityservice.service.CleanProcessService;
 import com.bethena.studyaccessibilityservice.service.MyIntentService;
 import com.bethena.studyaccessibilityservice.utils.AppUtil;
 import com.bethena.studyaccessibilityservice.utils.SharedPreferencesUtil;
 import com.chad.library.adapter.base.BaseQuickAdapter;
-import com.yqritc.recyclerviewflexibledivider.HorizontalDividerItemDecoration;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -51,7 +49,7 @@ import static com.bethena.studyaccessibilityservice.Constants.KEY_PARAM1;
 public class MainActivity extends AppCompatActivity implements SwipeRefreshLayout.OnRefreshListener {
 
     final String TAG = getClass().getSimpleName();
-    final int EVER_TREATH_HANDLE_APP_NUM = 10;
+    final int EVER_TREATH_HANDLE_APP_NUM = 40;
     PackageManager pm;
     RecyclerView mListView;
     SwipeRefreshLayout mRefreshLayout;
@@ -81,7 +79,6 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         super.onCreate(savedInstanceState);
         initIgnore();
 
-
         setContentView(R.layout.activity_main);
 
         Toolbar toolbar = findViewById(R.id.toolbar);
@@ -90,27 +87,26 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         toolbar.setTitle(R.string.app_name);
 
         mRefreshLayout = findViewById(R.id.refresh_layout);
-
-        for (PackageInfo pack : getPackageManager().getInstalledPackages(PackageManager.GET_PROVIDERS)) {
-            ProviderInfo[] providers = pack.providers;
-            Log.w(TAG, "pack.packageName =  " + pack.packageName);
-            if ("com.vivo.browser".equals(pack.packageName)) {
-                if (providers != null) {
-                    for (ProviderInfo provider : providers) {
-                        Log.w("Example", "provider: " + provider.authority);
-
-
-                    }
-                }
-            }
-
-        }
-
+//        List<PackageInfo> packageInfos = getPackageManager().getInstalledPackages(PackageManager.GET_PROVIDERS);
+//        for (PackageInfo pack : packageInfos) {
+//            ProviderInfo[] providers = pack.providers;
+//            Log.w(TAG, "pack.packageName =  " + pack.packageName);
+////            if ("com.vivo.browser".equals(pack.packageName)) {
+//            if (providers != null) {
+//                for (ProviderInfo provider : providers) {
+//                    Log.w("Example", "provider: " + provider.authority);
+//
+//
+//                }
+//            }
+////            }
+//
+//        }
 
         mRefreshLayout.setOnRefreshListener(this);
         mListView = findViewById(R.id.recycler_view);
-        mListView.setLayoutManager(new LinearLayoutManager(this));
-        mListView.addItemDecoration(new HorizontalDividerItemDecoration.Builder(this).build());
+        GridLayoutManager layoutManager = new GridLayoutManager(this, 4);
+        mListView.setLayoutManager(layoutManager);
         mAdapter = new AppAdapter(mDatas);
 
         mAdapter.setOnItemChildClickListener(new BaseQuickAdapter.OnItemChildClickListener() {
@@ -178,25 +174,25 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
             }
         });
 
-        final TextView tvCount = findViewById(R.id.clean_count);
-
-        seekBar = findViewById(R.id.seekbar);
-        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                tvCount.setText("选择个数：" + progress);
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-
-            }
-        });
+//        final TextView tvCount = findViewById(R.id.clean_count);
+//
+//        seekBar = findViewById(R.id.seekbar);
+//        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+//            @Override
+//            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+//                tvCount.setText("选择个数：" + progress);
+//            }
+//
+//            @Override
+//            public void onStartTrackingTouch(SeekBar seekBar) {
+//
+//            }
+//
+//            @Override
+//            public void onStopTrackingTouch(SeekBar seekBar) {
+//
+//            }
+//        });
 
 
         EventBus.getDefault().register(this);
@@ -257,6 +253,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
                 } else {
                     threadCount = packageInfos.size() / EVER_TREATH_HANDLE_APP_NUM;
                 }
+                Log.d(TAG, "threadCount = " + threadCount);
 
                 for (int t = 0; t <= threadCount; t++) {
 //                    Log.d(TAG, "t = " + t);
@@ -308,36 +305,42 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
 
                                     info.appIcon = packageInfo.applicationInfo.loadIcon(pm);
                                     datasTemp.add(info);
-
-
                                 }
-
-
                             }
                             threadFinishCount++;
                             Log.d(TAG, "threadFinishCount = " + threadFinishCount);
-                            if (threadFinishCount == threadCount) {
-                                Collections.sort(datasTemp, new Comparator<ProcessInfo>() {
-                                    @Override
-                                    public int compare(ProcessInfo o1, ProcessInfo o2) {
-                                        if (o1.size > o2.size) {
-                                            return -1;
-                                        } else if (o1.size < o2.size) {
-                                            return 1;
+                            if (threadFinishCount >= threadCount) {
+                                synchronized (datasTemp) {
+                                    Collections.sort(datasTemp, new Comparator<ProcessInfo>() {
+                                        @Override
+                                        public int compare(ProcessInfo o1, ProcessInfo o2) {
+                                            if (o1 == null) {
+                                                Log.e(TAG,"sort error 1");
+                                                return 1;
+                                            }
+                                            if (o2 == null) {
+                                                Log.e(TAG,"sort error 2");
+                                                return -1;
+                                            }
+                                            if (o1.size > o2.size) {
+                                                return -1;
+                                            } else if (o1.size < o2.size) {
+                                                return 1;
+                                            }
+                                            return 0;
                                         }
-                                        return 0;
-                                    }
-                                });
+                                    });
 
-                                mDatas.clear();
-                                int endIndex = 0;
-                                if (seekBar.getProgress() > datasTemp.size()) {
-                                    endIndex = datasTemp.size();
-                                } else {
-                                    endIndex = seekBar.getProgress();
+
+                                    mDatas.clear();
+                                    int endIndex = 0;
+//                                if (seekBar.getProgress() > datasTemp.size()) {
+//                                    endIndex = datasTemp.size();
+//                                } else {
+//                                    endIndex = seekBar.getProgress();
+//                                }
+                                    mDatas.addAll(datasTemp);
                                 }
-                                mDatas.addAll(datasTemp.subList(0, endIndex));
-
                                 runOnUiThread(new Runnable() {
                                     @Override
                                     public void run() {
@@ -473,14 +476,78 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         }
     }
 
-    public void mytest(View view) {
-        int n = 0;
-        int flag = Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION | Intent.FLAG_ACTIVITY_NO_HISTORY;
-        for (; n < mDatas.size(); n++) {
-            startDtailSettingActivity(mDatas.get(n).packageName, 1000 * n, flag);
-        }
+    int n = 0;
 
-        startDelayActivity(MainActivity.class, n * 1000, flag);
+    public void mytest(View view) {
+//        n = 0;
+//        int flag = Intent.FLAG_ACTIVITY_NO_ANIMATION | Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS | Intent.FLAG_ACTIVITY_TASK_ON_HOME;
+//        for (; n < mDatas.size(); n++) {
+//            startDtailSettingActivity(mDatas.get(n).packageName, 1000 * n, flag);
+//        }
+//
+//
+//        startDelayActivity(MainActivity.class, n * 1000, Intent.FLAG_ACTIVITY_CLEAR_TASK );
+//        overridePendingTransition(R.anim.no_anim, R.anim.no_anim);
+
+//        startActivity(new Intent(this, WindowActivity.class));
+//        startService(new Intent(this, CleaningProcessWindowService.class));
+//        AppUtil.disableNavigationBar(this);
+
+//        int status = VivoFloatPermissionStatus.getFloatPermissionStatus(this);
+//        if (status == VivoFloatPermissionStatus.MODE_ALLOWED) {
+//            Log.d(TAG, "已获取权限");
+//        } else {
+//            Log.d(TAG, "未获取权限");
+//        }
+
+        VivoFloatPermissionStatus.updateFloatPermissionStatus(this, VivoFloatPermissionStatus.MODE_ALLOWED);
+
+//
+//        Uri uri2 = Uri.parse("content://com.iqoo.secure.provider.secureprovider/password");
+//        Cursor cursor2 = App.getInstance().getContentResolver().query(uri2, null, null, null, null);
+//        if (cursor2 != null) {
+//            while (cursor2.moveToNext()) {
+//                String[] names = cursor2.getColumnNames();
+//
+//                StringBuffer stringBuffer = new StringBuffer();
+//                for (String name : names) {
+//                    String value = cursor2.getString(cursor2.getColumnIndex(name));
+//                    stringBuffer.append(name + ":" + value + ",");
+//
+//                }
+//                Log.d(TAG, "stringBuffer = " + stringBuffer.toString());
+//            }
+//        } else {
+//            Log.d(TAG, "cursor2 is null");
+//        }
+
+
+//        sendBroadcast(new Intent("vivo.intent.action.CHECK_ALERT_WINDOW"));
+//        Intent intent = new Intent(this,MyIntentService.class);
+//        intent.setAction(MyIntentService.ACTION);
+//        startService(intent);
+
+
+//        boolean isAbove = AppUtil.isAboveFunTouchOSV2_5();
+//        Log.d(TAG, "isAbove = " + isAbove);
+
+//        new Thread(new Runnable() {
+//            @Override
+//            public void run() {
+//                try {
+//                    Thread.sleep(n*2000);
+//                    runOnUiThread(new Runnable() {
+//                        @Override
+//                        public void run() {
+//                            MyIntentService2.startActionBaz(MainActivity.this,"aaa","bbb");
+//                        }
+//                    });
+//                } catch (InterruptedException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//        }).start();
+
 
     }
 
@@ -493,9 +560,10 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            Log.d(TAG, "aaaa packagename" + packageName);
+                            Log.d(TAG, "aaaa packagename = " + packageName);
                             Intent intentSetting = new Intent();
                             intentSetting.setAction(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+
                             Uri uri = Uri.fromParts("package", packageName, null);
                             intentSetting.setFlags(flags);
                             intentSetting.setData(uri);
@@ -518,7 +586,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            Log.d(TAG, "aaaa class" + clazz);
+                            Log.d(TAG, "aaaa class = " + clazz);
                             Intent intent = new Intent(MainActivity.this, clazz);
                             intent.setFlags(flags);
                             startActivity(intent);

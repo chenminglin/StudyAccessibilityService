@@ -1,5 +1,6 @@
 package com.bethena.studyaccessibilityservice;
 
+import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -23,12 +24,7 @@ public class Main2Activity extends AppCompatActivity {
                 .setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        disposable = Observable.intervalRange(0, 4, 0, 1000, TimeUnit.MILLISECONDS).subscribe(new Consumer<Long>() {
-                            @Override
-                            public void accept(Long aLong) throws Exception {
-                                System.out.println("" + aLong);
-                            }
-                        });
+                        startActivity(new Intent(Main2Activity.this,MainActivity.class));
                     }
                 });
 

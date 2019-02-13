@@ -62,4 +62,17 @@ public class ComputeTest {
         });
 
     }
+
+    @Test
+    public void stringBufferTest(){
+        StringBuffer stringBuffer = new StringBuffer();
+
+        apendTest(stringBuffer);
+        System.out.println(stringBuffer.toString());
+    }
+
+
+    public void apendTest(StringBuffer stringBuffer){
+        stringBuffer.append("111111");
+    }
 }

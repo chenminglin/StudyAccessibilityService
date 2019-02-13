@@ -21,6 +21,9 @@ public class AppAdapter extends BaseQuickAdapter<ProcessInfo, BaseViewHolder> {
 
     @Override
     protected void convert(BaseViewHolder helper, ProcessInfo item) {
+        if(item == null){
+            return;
+        }
         helper.setImageDrawable(R.id.app_icon, item.appIcon)
                 .setText(R.id.app_name, item.appName)
                 .setText(R.id.app_pkg, item.packageName)

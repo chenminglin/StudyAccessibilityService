@@ -14,7 +14,6 @@ import com.bethena.studyaccessibilityservice.Constants;
 import com.bethena.studyaccessibilityservice.R;
 import com.bethena.studyaccessibilityservice.bean.ProcessTransInfo;
 import com.bethena.studyaccessibilityservice.bean.UserTrajectory;
-import com.bethena.studyaccessibilityservice.permission.rom.RomUtils;
 
 import java.util.ArrayList;
 
@@ -48,7 +47,7 @@ public class CleanProcessService extends BaseAccessibilityService {
 
     String appName;
 
-    boolean isVivoSystem = RomUtils.checkIsVivoRom();
+    boolean isVivoSystem = false;
 
 
     @Override
@@ -81,7 +80,6 @@ public class CleanProcessService extends BaseAccessibilityService {
             Log.d(TAG, "onServiceConnected nodeInfo = " + nodeInfo.getClassName());
             //服务开启了，走这里返回
             performBackClick();
-
         }
 
 
@@ -231,21 +229,23 @@ public class CleanProcessService extends BaseAccessibilityService {
                             sendBroadcast(intent);
                             Log.d(TAG, "取消退出");
                         }
-                    } else if (mCurrentAppPkg != null
-                            && mCurrentAppPkg.cleanAccidentType == ProcessTransInfo.CLEAN_ACCIDENT_TYPE_CLEAN_VIEW_NOT_FOUND) {//应用详情页找不到
-                        performBackClick();
-                        isStartClean = false;
-                        sendBroadcast(new Intent(Constants.ACTION_RECEIVER_ACC_CLEAN_VIEW_NOT_FOUND));
-                        Log.d(TAG, "应用详情页找不到 退出");
-                    } else if (mCurrentAppPkg != null
-                            && mCurrentAppPkg.cleanAccidentType == ProcessTransInfo.CLEAN_ACCIDENT_TYPE_CLEAN_BUTTON_NOT_FOUND) {//按钮无法找到
-
-                        performBackClick();
-                        isStartClean = false;
-                        sendBroadcast(new Intent(Constants.ACTION_RECEIVER_ACC_CLEAN_BUTTON_NOT_FOUND));
-
-                        Log.d(TAG, "按钮无法找到 退出");
-                    } else if (isToCancel) {
+                    }
+//                    else if (mCurrentAppPkg != null
+//                            && mCurrentAppPkg.cleanAccidentType == ProcessTransInfo.CLEAN_ACCIDENT_TYPE_CLEAN_VIEW_NOT_FOUND) {//应用详情页找不到
+//                        performBackClick();
+//                        isStartClean = false;
+//                        sendBroadcast(new Intent(Constants.ACTION_RECEIVER_ACC_CLEAN_VIEW_NOT_FOUND));
+//                        Log.d(TAG, "应用详情页找不到 退出");
+//                    } else if (mCurrentAppPkg != null
+//                            && mCurrentAppPkg.cleanAccidentType == ProcessTransInfo.CLEAN_ACCIDENT_TYPE_CLEAN_BUTTON_NOT_FOUND) {//按钮无法找到
+//
+//                        performBackClick();
+//                        isStartClean = false;
+//                        sendBroadcast(new Intent(Constants.ACTION_RECEIVER_ACC_CLEAN_BUTTON_NOT_FOUND));
+//
+//                        Log.d(TAG, "按钮无法找到 退出");
+//                    }
+                    else if (isToCancel) {
                         Log.d(TAG, "取消1");
                         performBackClick();
                         isStartClean = true;
@@ -294,7 +294,8 @@ public class CleanProcessService extends BaseAccessibilityService {
                             mCurrentAppPkg.cleanAccidentType = ProcessTransInfo.CLEAN_ACCIDENT_TYPE_CLEAN_BUTTON_NOT_FOUND;
 
                             sendBroadcast(new Intent(Constants.ACTION_RECEIVER_ACC_CLEAN_BUTTON_NOT_FOUND));
-                            isStartClean = false;
+//                            isStartClean = false;
+                            printAllNode(getRootInActiveWindow());
                         }
                     }
                 } else if (dialogViews.contains(className) || (className != null && className.toString().endsWith("AlertDialog"))) {
@@ -378,10 +379,10 @@ public class CleanProcessService extends BaseAccessibilityService {
                 case Constants.ACTION_TO_ACC_DOIT:
                     mCurrentAppPkg = intent.getParcelableExtra(Constants.KEY_PARAM1);
                     Log.d(TAG, "onReceive mCurrentAppPkg = " + mCurrentAppPkg);
-                    if(mCurrentAppPkg!=null){
+                    if (mCurrentAppPkg != null) {
                         isStartClean = intent.getBooleanExtra(Constants.KEY_PARAM2, false);
                         isToCancel = false;
-                    }else{
+                    } else {
                         isStartClean = false;
                     }
                     break;

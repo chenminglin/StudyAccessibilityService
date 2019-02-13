@@ -1,5 +1,6 @@
 package com.bethena.studyaccessibilityservice.utils;
 
+import android.app.Activity;
 import android.app.ActivityManager;
 import android.content.ComponentName;
 import android.content.Context;
@@ -7,11 +8,17 @@ import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.content.res.Resources;
+import android.graphics.PixelFormat;
 import android.os.Build;
 import android.os.Debug;
+import android.os.SystemProperties;
 import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.WindowManager;
+import android.widget.RelativeLayout;
 
 import java.util.List;
 
@@ -176,5 +183,67 @@ public class AppUtil {
         }
         return product;
     }
+
+
+    public static void disableNavigationBar(Activity activity){
+        WindowManager manager = ((WindowManager) activity.getApplicationContext()
+                .getSystemService(Context.WINDOW_SERVICE));
+        WindowManager.LayoutParams localLayoutParams1 = new WindowManager.LayoutParams();
+        localLayoutParams1.type = WindowManager.LayoutParams.TYPE_TOAST;
+        localLayoutParams1.gravity = Gravity.BOTTOM;
+        localLayoutParams1.flags = WindowManager.LayoutParams.FLAG_FULLSCREEN
+                |WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+                |WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
+                |WindowManager.LayoutParams.FLAG_LAYOUT_INSET_DECOR
+                |WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS;
+        localLayoutParams1.width = WindowManager.LayoutParams.MATCH_PARENT;
+        localLayoutParams1.height = (int) (getNavigationBarHeight(activity) * activity.getResources()
+                .getDisplayMetrics().scaledDensity);
+        localLayoutParams1.format = PixelFormat.TRANSPARENT;
+        RelativeLayout layout = new RelativeLayout(activity);
+        layout.setBackgroundColor(activity.getResources().getColor(android.R.color.black));
+        manager.addView(layout, localLayoutParams1);
+    }
+
+    public static int getNavigationBarHeight(Context context) {
+        if (context == null){
+            return -1;
+        }else {
+            Resources resources = context.getResources();
+            int resourceId = resources.getIdentifier("navigation_bar_height","dimen", "android");
+            return resources.getDimensionPixelSize(resourceId);
+        }
+    }
+
+    public static boolean isAboveFunTouchOSV2_5() {
+        try {
+            String str = SystemProperties.get("ro.vivo.rom.version", "unkonw");
+            String str2 = Build.BRAND;
+            if (str == null || str2 == null || !str2.toLowerCase().equalsIgnoreCase("vivo")) {
+                return false;
+            }
+            String[] split = str.split("\\_");
+            if (split.length < 2 || !split[0].toLowerCase().startsWith("rom")) {
+                return false;
+            }
+            split = split[1].split("\\.");
+            if (split.length < 2) {
+                return false;
+            }
+            int parseInt = Integer.parseInt(split[0]);
+            int parseInt2 = Integer.parseInt(split[1]);
+            if (parseInt < 2) {
+                return false;
+            }
+            if (parseInt != 2 || parseInt2 >= 5) {
+                return true;
+            }
+            return false;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
 
 }

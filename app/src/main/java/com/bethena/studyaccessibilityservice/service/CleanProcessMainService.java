@@ -23,6 +23,7 @@ import android.view.WindowManager;
 import android.widget.Toast;
 
 import com.bethena.studyaccessibilityservice.Constants;
+import com.bethena.studyaccessibilityservice.MainActivity;
 import com.bethena.studyaccessibilityservice.R;
 import com.bethena.studyaccessibilityservice.bean.ProcessTransInfo;
 import com.bethena.studyaccessibilityservice.permission.FloatWindowManager;
@@ -61,6 +62,9 @@ public class CleanProcessMainService extends Service {
         super.onCreate();
         pm = getPackageManager();
         initReceiver();
+
+//        FloatWindowManager.getInstance().applyPermission(this);
+
     }
 
 
@@ -72,6 +76,8 @@ public class CleanProcessMainService extends Service {
             isServiceStart = true;
             startNextAppSetting(true);
         }
+
+
 
         return super.onStartCommand(intent, flags, startId);
     }
